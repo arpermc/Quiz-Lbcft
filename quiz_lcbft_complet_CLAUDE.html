@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz LCB/FT — Monaco — 300 Questions</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #1F3864;
+    --navy-light: #2c4f8a;
+    --green: #375623;
+    --green-bg: #E2EFDA;
+    --green-border: #639922;
+    --red: #843C0C;
+    --red-bg: #FCE4D6;
+    --red-border: #E24B4A;
+    --grey: #f5f5f5;
+    --grey2: #e8e8e8;
+    --text: #2c2c2c;
+    --text-muted: #666;
+    --white: #ffffff;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  body { font-family: Arial, Helvetica, sans-serif; background: #f0f2f5; color: var(--text); font-size: 15px; line-height: 1.5; }
+
+  /* HEADER */
+  .site-header { background: var(--navy); color: #fff; padding: 24px 32px 20px; }
+  .site-header h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.02em; }
+  .site-header p { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+  .global-score-bar { background: rgba(255,255,255,0.1); border-radius: 6px; padding: 10px 16px; margin-top: 14px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .global-score-bar span { font-size: 13px; color: rgba(255,255,255,0.85); }
+  .global-score-bar strong { color: #fff; font-size: 15px; }
+  #global-progress { flex: 1; min-width: 120px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
+  #global-progress-fill { height: 100%; background: #7ac94a; width: 0%; transition: width 0.3s; border-radius: 3px; }
+
+  /* NAV TABS */
+  .nav-tabs { background: var(--navy-light); display: flex; overflow-x: auto; gap: 0; scrollbar-width: none; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 11px 18px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.65); background: none; border: none; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.15s; }
+  .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .tab-btn.active { color: #fff; border-bottom-color: #7ac94a; }
+
+  /* MAIN */
+  .main { max-width: 960px; margin: 24px auto; padding: 0 16px 48px; }
+
+  /* SERIE PANEL */
+  .serie-panel { display: none; }
+  .serie-panel.active { display: block; }
+
+  /* SERIE HEADER */
+  .serie-header { background: var(--white); border-radius: 10px; padding: 20px 24px; margin-bottom: 20px; box-shadow: var(--shadow); border-left: 5px solid var(--navy); }
+  .serie-header h2 { font-size: 18px; color: var(--navy); font-weight: 700; }
+  .serie-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .serie-stats { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+  .stat-pill { font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
+  .stat-pill.total { background: #e8eef7; color: var(--navy); }
+  .stat-pill.answered { background: #e8f4e8; color: #2d6e2d; }
+  .stat-pill.correct { background: var(--green-bg); color: var(--green); }
+  .stat-pill.wrong { background: var(--red-bg); color: var(--red); }
+
+  /* PART TITLE */
+  .part-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 1.5px solid var(--grey2); }
+
+  /* QUESTION CARD */
+  .q-card { background: var(--white); border-radius: 8px; margin-bottom: 8px; box-shadow: var(--shadow); overflow: hidden; transition: box-shadow 0.15s; }
+  .q-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+  .q-card.answered-correct { border-left: 4px solid var(--green-border); }
+  .q-card.answered-wrong { border-left: 4px solid var(--red-border); }
+  .q-inner { display: grid; grid-template-columns: 36px 1fr auto auto; align-items: center; gap: 10px; padding: 12px 16px; }
+  .q-num { font-size: 12px; color: var(--text-muted); text-align: right; font-weight: 500; }
+  .q-text { font-size: 14px; color: var(--text); line-height: 1.45; }
+  .q-actions { display: flex; gap: 6px; align-items: center; }
+  .btn-vf { padding: 5px 14px; font-size: 12px; font-weight: 600; border-radius: 5px; border: 1.5px solid #ccc; background: var(--white); color: var(--text); cursor: pointer; transition: all 0.12s; min-width: 50px; text-align: center; }
+  .btn-vf:hover:not(:disabled) { background: var(--grey); border-color: #aaa; }
+  .btn-vf:disabled { cursor: default; }
+  .btn-vf.correct { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+  .btn-vf.wrong { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+  .btn-vf.reveal { background: var(--green-bg); color: var(--green); border-color: var(--green-border); opacity: 0.75; }
+  .result-badge { font-size: 12px; font-weight: 700; min-width: 70px; text-align: right; }
+  .result-badge.ok { color: var(--green); }
+  .result-badge.ko { color: var(--red); }
+
+  /* EXPLICATION */
+  .q-expl { display: none; padding: 10px 16px 14px 62px; font-size: 13px; color: #444; line-height: 1.6; border-top: 1px solid var(--grey2); background: #fafafa; }
+  .q-expl strong { color: var(--navy); }
+  .q-card.answered-wrong .q-expl { display: block; }
+
+  /* RESET BTN */
+  .reset-bar { margin-top: 28px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .btn-reset { padding: 9px 22px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1.5px solid #bbb; background: var(--white); color: var(--text); cursor: pointer; }
+  .btn-reset:hover { background: var(--grey); }
+  .btn-reset-all { padding: 9px 22px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1.5px solid var(--red-border); background: var(--white); color: var(--red); cursor: pointer; }
+  .btn-reset-all:hover { background: var(--red-bg); }
+  .final-score { font-size: 14px; font-weight: 700; padding: 9px 18px; border-radius: 6px; background: var(--green-bg); color: var(--green); border: 1.5px solid var(--green-border); display: none; }
+
+  /* RESPONSIVE */
+  @media (max-width: 600px) {
+    .q-inner { grid-template-columns: 28px 1fr; gap: 6px; }
+    .q-actions { grid-column: 2; }
+    .result-badge { display: none; }
+    .q-expl { padding-left: 16px; }
+    .site-header { padding: 16px; }
+    .site-header h1 { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <h1>Examen de Certification LCB/FT — Monaco</h1>
+  <p>5 séries &bull; 18 parties &bull; 300 questions Vrai / Faux</p>
+  <div class="global-score-bar">
+    <span>Progression globale : <strong id="g-answered">0</strong> / 300</span>
+    <div id="global-progress"><div id="global-progress-fill"></div></div>
+    <span>Score : <strong id="g-correct">0</strong> correctes &nbsp;|&nbsp; <strong id="g-wrong">0</strong> incorrectes</span>
+  </div>
+</header>
+
+<nav class="nav-tabs" id="nav-tabs"></nav>
+
+<main class="main" id="main-content"></main>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const SERIES = [
+{
+  id:"s1", label:"Série 1",
+  desc:"Fondamentaux · KYC/BE/PPE · Transactions & Risques · Gouvernance & Audit",
+  parts:[
+    { title:"Partie 1 — Fondamentaux", items:[
+      {n:1, q:"Le dispositif LCB/FT s'applique uniquement aux établissements financiers.", a:"Faux",
+       e:"Le dispositif LCB/FT s'applique à un large éventail de professions assujetties : notaires, avocats, agents immobiliers, experts-comptables, marchands d'art, etc. À Monaco, la Loi n° 1.362 du 3 août 2009 définit la liste des entités assujetties bien au-delà du seul secteur financier."},
+      {n:2, q:"La déclaration de soupçon nécessite une preuve formelle.", a:"Faux",
+       e:"La DS repose sur un soupçon raisonnable, non sur une preuve ou une certitude. Attendre la preuve viderait l'obligation de sa substance : c'est SICCFIN qui a pour mission d'analyser et d'enquêter."},
+      {n:3, q:"La LCB/FT repose sur une approche basée sur les risques.", a:"Vrai"},
+      {n:4, q:"Le blanchiment consiste à dissimuler l'origine illicite de fonds.", a:"Vrai"},
+      {n:5, q:"Le financement du terrorisme implique toujours des fonds illicites.", a:"Faux",
+       e:"Le FT peut provenir de fonds d'origine parfaitement licite (dons, revenus d'activité légale). C'est l'utilisation des fonds — financer des actes terroristes — qui est illicite, et non nécessairement leur origine."},
+      {n:6, q:"Une incohérence économique est un signal d'alerte.", a:"Vrai"},
+      {n:7, q:"La vigilance client est une obligation continue.", a:"Vrai"},
+      {n:8, q:"Le risque zéro existe en LCB/FT.", a:"Faux",
+       e:"Le risque zéro n'existe pas. L'objectif est d'identifier, évaluer et réduire le risque à un niveau résiduel acceptable. L'APR repose précisément sur cette impossibilité d'atteindre le risque nul."},
+      {n:9, q:"Les procédures internes suffisent sans application concrète.", a:"Faux",
+       e:"L'AMSF évalue non seulement l'existence de procédures (conformité technique) mais aussi leur mise en œuvre réelle et leur efficacité opérationnelle. Un dispositif sur papier non appliqué peut être sanctionné."},
+      {n:10, q:"La formation du personnel est obligatoire.", a:"Vrai"},
+      {n:11, q:"Le client doit toujours être informé d'une déclaration.", a:"Faux",
+       e:"L'obligation de confidentialité (tipping-off) est absolue : informer le client de l'existence d'une DS est formellement interdit et constitue une infraction pénale à Monaco."},
+      {n:12, q:"Les opérations inhabituelles doivent être analysées.", a:"Vrai"},
+      {n:13, q:"La conformité concerne uniquement le département compliance.", a:"Faux",
+       e:"La conformité LCB/FT est une responsabilité collective. Chaque collaborateur et la direction sont parties prenantes. Le modèle des trois lignes de défense illustre cette responsabilité partagée."},
+      {n:14, q:"La documentation n'est pas essentielle en audit.", a:"Faux",
+       e:"La documentation constitue la preuve de la diligence accomplie. En cas de contrôle, l'absence de documentation équivaut à une absence de diligence. Les obligations de conservation (5 ans à Monaco) visent à garantir la traçabilité."},
+      {n:15, q:"Le dispositif doit être proportionné aux risques.", a:"Vrai"},
+    ]},
+    { title:"Partie 2 — KYC / BE / PPE", items:[
+      {n:16, q:"L'identification du client est facultative dans certains cas.", a:"Faux",
+       e:"L'identification est une obligation légale fondamentale. Même en vigilance simplifiée, l'identité du client doit être établie. L'absence totale d'identification est prohibée par la Loi n° 1.362."},
+      {n:17, q:"Le bénéficiaire effectif doit être une personne physique.", a:"Vrai"},
+      {n:18, q:"Un BE peut être ignoré s'il est difficile à identifier.", a:"Faux",
+       e:"La difficulté d'identification constitue un signal de risque accru. Si le BE ne peut être identifié malgré les diligences, l'entité doit envisager de ne pas entrer en relation et potentiellement déposer une DS."},
+      {n:19, q:"Une PPE nécessite une vigilance renforcée.", a:"Vrai"},
+      {n:20, q:"Les proches d'une PPE sont concernés.", a:"Vrai"},
+      {n:21, q:"La déclaration du client suffit pour identifier le BE.", a:"Faux",
+       e:"La déclaration du client est un point de départ mais doit être vérifiée de manière indépendante via des documents, registres officiels ou sources tierces fiables. La confiance aveugle ne satisfait pas aux obligations de vigilance."},
+      {n:22, q:"Une structure complexe augmente le risque.", a:"Vrai"},
+      {n:23, q:"Le statut PPE doit être actualisé.", a:"Vrai"},
+      {n:24, q:"La KYC s'arrête après l'entrée en relation.", a:"Faux",
+       e:"La KYC est un processus continu. L'entité doit surveiller en permanence les transactions, mettre à jour les informations client et réévaluer périodiquement le profil de risque."},
+      {n:25, q:"Un client opaque est un signal de risque.", a:"Vrai"},
+      {n:26, q:"Le BE doit être vérifié indépendamment.", a:"Vrai"},
+      {n:27, q:"Une PPE est automatiquement suspecte.", a:"Faux",
+       e:"Une PPE n'est pas automatiquement suspecte : son statut implique un risque plus élevé justifiant une vigilance renforcée, mais pas une présomption de culpabilité. L'obligation est de collecter plus d'informations, non de refuser systématiquement."},
+      {n:28, q:"Les informations client doivent être mises à jour.", a:"Vrai"},
+      {n:29, q:"Une société écran peut masquer le BE.", a:"Vrai"},
+      {n:30, q:"Le refus d'information est un signal d'alerte.", a:"Vrai"},
+    ]},
+    { title:"Partie 3 — Transactions & Risques", items:[
+      {n:31, q:"Le montant est le seul critère de risque.", a:"Faux",
+       e:"Le montant est un indicateur parmi d'autres. La nature du produit, l'origine géographique, le profil du client, la cohérence économique, la fréquence des transactions sont tout aussi déterminants. Une transaction de faible montant peut être très suspecte."},
+      {n:32, q:"Une transaction inhabituelle doit être analysée.", a:"Vrai"},
+      {n:33, q:"Le fractionnement est un indicateur de risque.", a:"Vrai"},
+      {n:34, q:"Les flux internationaux augmentent le risque.", a:"Vrai"},
+      {n:35, q:"Un produit complexe augmente le risque.", a:"Vrai"},
+      {n:36, q:"Une transaction logique n'a jamais besoin d'analyse.", a:"Faux",
+       e:"Des opérations apparemment cohérentes peuvent dissimuler des flux illicites sophistiqués. L'obligation de surveillance continue impose d'analyser les transactions dans leur contexte global, y compris les opérations a priori banales."},
+      {n:37, q:"Les espèces sont à faible risque.", a:"Faux",
+       e:"Les espèces sont au contraire à risque élevé en raison de leur anonymat et de l'absence de traçabilité. Monaco impose des plafonds stricts aux paiements en espèces et des obligations déclaratives spécifiques."},
+      {n:38, q:"Le canal de distribution influence le risque.", a:"Vrai"},
+      {n:39, q:"Une transaction isolée peut être ignorée.", a:"Faux",
+       e:"Aucune transaction ne peut être ignorée par principe. Une transaction isolée et inhabituelle peut signaler un blanchiment ou un FT. Ce qui paraît isolé peut s'inscrire dans un schéma plus large détectable par analyse transversale."},
+      {n:40, q:"La fréquence des opérations est un indicateur.", a:"Vrai"},
+      {n:41, q:"Les produits anonymes sont à risque élevé.", a:"Vrai"},
+      {n:42, q:"Les anomalies doivent être documentées.", a:"Vrai"},
+      {n:43, q:"La géographie est un facteur de risque.", a:"Vrai"},
+      {n:44, q:"Les sanctions internationales sont un critère majeur.", a:"Vrai"},
+      {n:45, q:"Les flux complexes doivent être analysés.", a:"Vrai"},
+    ]},
+    { title:"Partie 4 — Gouvernance & Audit", items:[
+      {n:46, q:"La direction est responsable du dispositif.", a:"Vrai"},
+      {n:47, q:"Le responsable LCB/FT doit être indépendant.", a:"Vrai"},
+      {n:48, q:"Le contrôle interne est facultatif.", a:"Faux",
+       e:"Le contrôle interne est une obligation réglementaire. Il constitue la deuxième ligne de défense. Son absence expose l'entité à des sanctions. Les procédures doivent être documentées, appliquées et régulièrement révisées."},
+      {n:49, q:"Le modèle des 3 lignes de défense s'applique.", a:"Vrai"},
+      {n:50, q:"La conformité est une responsabilité collective.", a:"Vrai"},
+      {n:51, q:"Un dispositif non appliqué est conforme.", a:"Faux",
+       e:"La conformité exige l'existence de procédures ET leur application effective. Un dispositif formel non mis en œuvre ne satisfait pas aux exigences. L'AMSF évalue systématiquement l'effectivité lors de ses contrôles."},
+      {n:52, q:"L'audit vérifie l'efficacité du dispositif.", a:"Vrai"},
+      {n:53, q:"Les contrôles doivent être documentés.", a:"Vrai"},
+      {n:54, q:"La culture compliance est secondaire.", a:"Faux",
+       e:"La culture compliance est un pilier fondamental. Sans tone from the top fort, les procédures restent lettre morte. Les évaluations du GAFI accordent une importance croissante à cet aspect qualitatif."},
+      {n:55, q:"L'absence de preuve est acceptable.", a:"Faux",
+       e:"Ce qui n'est pas documenté n'a pas été fait. Les diligences doivent être tracées et conservées. L'absence de preuve peut engager la responsabilité du professionnel."},
+      {n:56, q:"Le reporting n'est pas nécessaire.", a:"Faux",
+       e:"Le reporting interne et externe (SICCFIN, AMSF) est une obligation fondamentale. Il assure la remontée d'information et démontre l'effectivité du contrôle. Son absence prive la direction et les superviseurs de la visibilité nécessaire."},
+      {n:57, q:"Le dispositif doit évoluer.", a:"Vrai"},
+      {n:58, q:"Les ressources doivent être adaptées aux risques.", a:"Vrai"},
+      {n:59, q:"La traçabilité est essentielle.", a:"Vrai"},
+      {n:60, q:"Le dispositif LCB/FT est stratégique.", a:"Vrai"},
+    ]},
+  ]
+},
+{
+  id:"s2", label:"Série 2",
+  desc:"Déclaration de soupçon · Sanctions & gel · Immobilier · Contrôles documentaires",
+  parts:[
+    { title:"Partie 5 — Déclaration de soupçon (DS)", items:[
+      {n:1, q:"La déclaration de soupçon doit être transmise à SICCFIN.", a:"Vrai"},
+      {n:2, q:"Un soupçon doit être fondé sur des preuves formelles avant déclaration.", a:"Faux",
+       e:"La DS repose sur un soupçon raisonnable. Exiger des preuves retarderait la transmission et viderait l'obligation de son sens. C'est SICCFIN qui analyse et enquête sur le bien-fondé des déclarations reçues."},
+      {n:3, q:"Le professionnel peut informer le client qu'une DS a été déposée.", a:"Faux",
+       e:"L'interdiction de divulgation (tipping-off) est absolue. Informer le client est une infraction pénale à Monaco. Cette règle préserve l'intégrité des enquêtes et évite que le suspect efface les preuves."},
+      {n:4, q:"L'obligation de confidentialité sur la DS est absolue.", a:"Vrai"},
+      {n:5, q:"Une DS peut être déposée même si la transaction n'a pas été réalisée.", a:"Vrai"},
+      {n:6, q:"Le dépôt d'une DS exonère automatiquement le professionnel de responsabilité.", a:"Faux",
+       e:"La DS confère une immunité de bonne foi pour violation du secret professionnel, mais n'exonère pas de toute responsabilité. Des manquements antérieurs (défaut de vigilance) peuvent toujours être sanctionnés."},
+      {n:7, q:"Le délai pour déposer une DS est illimité après détection du soupçon.", a:"Faux",
+       e:"La DS doit être transmise sans délai dès que le soupçon est constitué. Un retard injustifié peut engager la responsabilité du professionnel. En matière de FT, la réactivité est encore plus critique."},
+      {n:8, q:"SICCFIN peut demander des informations complémentaires après une DS.", a:"Vrai"},
+      {n:9, q:"La DS peut être retirée une fois déposée.", a:"Faux",
+       e:"Une DS transmise à SICCFIN ne peut pas être retirée. Elle est un acte formel irrévocable qui produit immédiatement ses effets."},
+      {n:10, q:"Le blanchiment de capitaux et le financement du terrorisme font l'objet de DS distinctes.", a:"Faux",
+       e:"À Monaco, une seule DS couvre à la fois le blanchiment et le FT. Le formulaire permet d'indiquer la nature du soupçon, mais il n'existe pas deux procédures formellement distinctes."},
+      {n:11, q:"Un soupçon de financement du terrorisme doit être signalé sans délai.", a:"Vrai"},
+      {n:12, q:"Les tentatives de transaction suspecte peuvent faire l'objet d'une DS.", a:"Vrai"},
+      {n:13, q:"La DS peut être déposée oralement dans certains cas.", a:"Faux",
+       e:"La DS doit être transmise à SICCFIN par écrit selon les modalités officielles. Une DS orale ne bénéficie pas de la protection légale attachée à la DS formelle et ne satisfait pas aux exigences de traçabilité."},
+      {n:14, q:"Le responsable LCB/FT valide la DS avant transmission à SICCFIN.", a:"Vrai"},
+      {n:15, q:"La DS protège le professionnel contre toute poursuite civile ou pénale de bonne foi.", a:"Vrai"},
+    ]},
+    { title:"Partie 6 — Sanctions & gel des avoirs", items:[
+      {n:16, q:"Le gel des avoirs peut être ordonné sans décision judiciaire préalable à Monaco.", a:"Vrai"},
+      {n:17, q:"Les listes de sanctions internationales doivent être consultées à l'entrée en relation uniquement.", a:"Faux",
+       e:"La vérification est une obligation continue. Les listes sont mises à jour régulièrement et une personne non sanctionnée lors de l'entrée en relation peut l'être ultérieurement. Un screening régulier est indispensable."},
+      {n:18, q:"Un client figurant sur une liste de sanctions peut continuer à opérer sous conditions.", a:"Faux",
+       e:"La présence sur une liste de sanctions impose le gel immédiat et l'interdiction de toute transaction. Aucune condition ne permet de maintenir des opérations, sauf dérogation explicitement accordée par l'autorité compétente."},
+      {n:19, q:"Le gel des avoirs concerne uniquement les fonds bancaires.", a:"Faux",
+       e:"Le gel s'applique à tous les actifs : fonds bancaires, biens immobiliers, participations, mobilier, bijoux, œuvres d'art, etc. La notion d'avoirs est interprétée largement pour couvrir tout ce qui appartient à la personne sanctionnée."},
+      {n:20, q:"Les résolutions du Conseil de sécurité de l'ONU s'appliquent à Monaco.", a:"Vrai"},
+      {n:21, q:"Les sanctions de l'UE sont directement applicables à Monaco.", a:"Faux",
+       e:"Monaco n'est pas membre de l'UE. Les sanctions européennes ne sont pas directement applicables. La Principauté les transpose par ses propres textes (ordonnances souveraines) en s'alignant sur les résolutions ONU."},
+      {n:22, q:"Une correspondance de nom approximative suffit pour geler des avoirs.", a:"Faux",
+       e:"Une simple homonymie ne suffit pas. Une identification rigoureuse (date de naissance, nationalité, passeport) est requise pour éviter les faux positifs qui peuvent avoir de graves conséquences pour des personnes innocentes."},
+      {n:23, q:"Le professionnel doit signaler immédiatement toute relation avec une personne sanctionnée.", a:"Vrai"},
+      {n:24, q:"Les sanctions peuvent viser des entités juridiques et non uniquement des personnes physiques.", a:"Vrai"},
+      {n:25, q:"Le gel des avoirs interdit tout paiement, même pour des besoins vitaux.", a:"Faux",
+       e:"Des dérogations humanitaires existent : les systèmes de sanctions prévoient des paiements autorisés pour les besoins vitaux (alimentation, logement, soins) et les frais juridiques. Ces dérogations sont strictement encadrées et soumises à autorisation."},
+      {n:26, q:"Le contournement de sanctions est une infraction pénale.", a:"Vrai"},
+      {n:27, q:"Un pays tiers peut être désigné comme juridiction à haut risque par le GAFI.", a:"Vrai"},
+      {n:28, q:"Les sanctions ciblées visent des secteurs économiques entiers.", a:"Faux",
+       e:"Les sanctions ciblées (targeted sanctions) visent des individus ou entités spécifiques identifiés nommément. Ce sont les sanctions sectorielles ou générales qui peuvent viser des secteurs entiers."},
+      {n:29, q:"La vérification des listes de sanctions doit être tracée et documentée.", a:"Vrai"},
+      {n:30, q:"Monaco dispose de sa propre liste nationale de personnes gelées.", a:"Vrai"},
+    ]},
+    { title:"Partie 7 — Immobilier & professions non-financières", items:[
+      {n:31, q:"Les agents immobiliers sont assujettis aux obligations LCB/FT à Monaco.", a:"Vrai"},
+      {n:32, q:"La vigilance LCB/FT en immobilier ne s'applique qu'à l'achat, pas à la location.", a:"Faux",
+       e:"Les obligations s'appliquent aussi aux locations à partir de certains seuils. La location peut être utilisée comme vecteur de blanchiment (loyers en espèces, flux inexpliqués)."},
+      {n:33, q:"Le paiement en espèces d'un bien immobilier est autorisé sans limite à Monaco.", a:"Faux",
+       e:"Monaco impose des plafonds stricts aux paiements en espèces. Ces restrictions garantissent la traçabilité des fonds dans des transactions immobilières de montants souvent très élevés."},
+      {n:34, q:"L'origine des fonds doit être justifiée lors d'une acquisition immobilière.", a:"Vrai"},
+      {n:35, q:"Un prête-nom dans une transaction immobilière est un indicateur de risque.", a:"Vrai"},
+      {n:36, q:"Les notaires sont soumis aux obligations LCB/FT à Monaco.", a:"Vrai"},
+      {n:37, q:"Les avocats sont totalement exemptés des obligations LCB/FT.", a:"Faux",
+       e:"Les avocats sont assujettis lorsqu'ils interviennent dans des opérations spécifiques : transactions immobilières, gestion de fonds, constitution de sociétés. La Recommandation 23 du GAFI encadre les professions juridiques."},
+      {n:38, q:"Une SCI peut être utilisée pour masquer le bénéficiaire effectif d'un bien.", a:"Vrai"},
+      {n:39, q:"Le financement d'un bien par un prêt bancaire exclut tout risque LCB/FT.", a:"Faux",
+       e:"Le financement bancaire ne neutralise pas les risques. Le prêt peut être obtenu sur la base de revenus frauduleux, et les fonds propres apportés peuvent être d'origine illicite."},
+      {n:40, q:"Les experts-comptables peuvent être assujettis aux obligations LCB/FT.", a:"Vrai"},
+      {n:41, q:"Une acquisition par une société offshore est systématiquement suspecte.", a:"Faux",
+       e:"L'utilisation d'une société offshore n'est pas illégale en soi. Des raisons légitimes existent. L'opacité de la structure est un facteur de risque justifiant des diligences renforcées pour identifier le BE réel."},
+      {n:42, q:"Le prix de vente déclaré doit correspondre au prix réel de la transaction.", a:"Vrai"},
+      {n:43, q:"Les marchands d'art sont concernés par les obligations LCB/FT à partir d'un certain seuil.", a:"Vrai"},
+      {n:44, q:"Le client peut refuser de justifier l'origine de ses fonds sans conséquences.", a:"Faux",
+       e:"Le refus est un signal d'alerte majeur. L'entité ne peut pas poursuivre si elle n'obtient pas les informations nécessaires. Ce refus peut justifier une DS et la rupture de la relation d'affaires."},
+      {n:45, q:"Les transactions immobilières transfrontalières présentent un risque accru.", a:"Vrai"},
+    ]},
+    { title:"Partie 8 — Contrôles & obligations documentaires", items:[
+      {n:46, q:"Les dossiers clients doivent être conservés au minimum 5 ans après la fin de la relation.", a:"Vrai"},
+      {n:47, q:"Le délai de conservation des documents LCB/FT est identique dans tous les pays.", a:"Faux",
+       e:"Les délais varient selon les juridictions : 5 ans à Monaco, 7 ou 10 ans ailleurs. Les entités opérant dans plusieurs pays doivent se conformer aux règles spécifiques de chaque juridiction."},
+      {n:48, q:"Un contrôle interne LCB/FT doit être réalisé au moins une fois par an.", a:"Vrai"},
+      {n:49, q:"Les rapports de contrôle interne peuvent être détruits après examen.", a:"Faux",
+       e:"Les rapports doivent être conservés pendant la durée légale applicable (5 ans à Monaco). Ils constituent une preuve essentielle de l'effectivité du dispositif et peuvent être requis lors d'un contrôle de l'AMSF."},
+      {n:50, q:"La cartographie des risques est un document obligatoire pour les entités assujetties.", a:"Vrai"},
+      {n:51, q:"Les procédures LCB/FT doivent être accessibles à l'ensemble du personnel concerné.", a:"Vrai"},
+      {n:52, q:"Un audit externe remplace l'obligation de contrôle interne.", a:"Faux",
+       e:"L'audit externe (3e ligne de défense) et le contrôle interne (2e ligne) sont complémentaires et non substituables. L'audit fournit une évaluation périodique, mais ne remplace pas la surveillance continue au quotidien."},
+      {n:53, q:"Les formulaires de connaissance client (KYC) peuvent être verbaux.", a:"Faux",
+       e:"Les diligences KYC doivent être documentées par écrit. Une KYC orale non documentée ne satisfait pas aux obligations légales et ne peut pas être présentée lors d'un contrôle ou d'une procédure judiciaire."},
+      {n:54, q:"La mise à jour périodique des dossiers client est une obligation réglementaire.", a:"Vrai"},
+      {n:55, q:"Les pièces d'identité des clients doivent être certifiées conformes dans tous les cas.", a:"Faux",
+       e:"L'obligation de certification dépend du niveau de risque. En vigilance standard, une copie simple peut suffire. La certification est généralement requise en vigilance renforcée. L'APR détermine le niveau de vérification requis."},
+      {n:56, q:"Le registre des opérations suspectes internes doit être tenu à jour.", a:"Vrai"},
+      {n:57, q:"En cas de contrôle AMSF, le professionnel doit produire ses dossiers dans les délais impartis.", a:"Vrai"},
+      {n:58, q:"L'absence de mise à jour des procédures peut entraîner des sanctions.", a:"Vrai"},
+      {n:59, q:"Les formations LCB/FT du personnel doivent être documentées et tracées.", a:"Vrai"},
+      {n:60, q:"Un dossier incomplet peut être régularisé après une déclaration de soupçon.", a:"Faux",
+       e:"Un dossier incomplet ne peut pas être rétroactivement régularisé via la DS. Le dossier doit refléter fidèlement les diligences réellement accomplies à leur date. La DS ne purge pas les manquements antérieurs."},
+    ]},
+  ]
+},
+{
+  id:"s3", label:"Série 3",
+  desc:"GAFI & normes internationales · Approche par les risques · Vigilance renforcée & simplifiée",
+  parts:[
+    { title:"Partie 9 — GAFI & normes internationales", items:[
+      {n:1, q:"Le GAFI est un organisme intergouvernemental de fixation de normes LCB/FT.", a:"Vrai"},
+      {n:2, q:"Les 40 Recommandations du GAFI sont juridiquement contraignantes pour tous les États.", a:"Faux",
+       e:"Les Recommandations sont des normes politiques et techniques mais pas des traités contraignants. Leur force tient à la pression des évaluations mutuelles et aux conséquences sur la réputation. Les États les transposent dans leur droit interne."},
+      {n:3, q:"Monaco est membre observateur du GAFI.", a:"Faux",
+       e:"Monaco est membre du MONEYVAL (comité d'experts du Conseil de l'Europe), pas du GAFI. C'est le MONEYVAL qui conduit les évaluations mutuelles de Monaco selon les normes GAFI."},
+      {n:4, q:"Le MONEYVAL est le comité d'évaluation du Conseil de l'Europe pour la LCB/FT.", a:"Vrai"},
+      {n:5, q:"Une évaluation mutuelle GAFI examine uniquement le cadre législatif d'un pays.", a:"Faux",
+       e:"L'évaluation examine deux dimensions : la conformité technique (cadre législatif) ET l'efficacité (mise en œuvre concrète). Depuis la 4e ronde, l'efficacité est mesurée à travers 11 Résultats Immédiats."},
+      {n:6, q:"La liste grise du GAFI signale les juridictions sous surveillance renforcée.", a:"Vrai"},
+      {n:7, q:"Les pays figurant sur la liste noire du GAFI font l'objet de contre-mesures obligatoires.", a:"Vrai"},
+      {n:8, q:"Le GAFI a été créé en 1989 lors du G7 de Paris.", a:"Vrai"},
+      {n:9, q:"Les Recommandations GAFI couvrent uniquement le blanchiment de capitaux.", a:"Faux",
+       e:"Les 40 Recommandations couvrent trois domaines : le blanchiment (BC), le financement du terrorisme (FT) et le financement de la prolifération des armes de destruction massive (FP)."},
+      {n:10, q:"La Recommandation 10 du GAFI porte sur la vigilance à l'égard de la clientèle.", a:"Vrai"},
+      {n:11, q:"La Recommandation 16 du GAFI concerne les virements électroniques.", a:"Vrai"},
+      {n:12, q:"Le GAFI impose une approche uniforme à tous les pays indépendamment de leurs risques.", a:"Faux",
+       e:"Le GAFI promeut l'APR qui implique que les mesures soient proportionnées aux risques identifiés. Chaque pays calibre son dispositif selon son Évaluation Nationale des Risques (ENR)."},
+      {n:13, q:"Monaco fait l'objet d'évaluations mutuelles régulières par le MONEYVAL.", a:"Vrai"},
+      {n:14, q:"Les Groupes régionaux de type GAFI (GAFISUD, GIABA…) appliquent des normes différentes.", a:"Faux",
+       e:"Les Groupes régionaux de type GAFI (FSRBs) appliquent les mêmes 40 Recommandations dans leurs régions respectives, selon la même méthodologie, garantissant la cohérence des normes mondiales."},
+      {n:15, q:"La Recommandation 1 du GAFI impose l'évaluation nationale des risques (ENR).", a:"Vrai"},
+    ]},
+    { title:"Partie 10 — Approche par les risques (APR)", items:[
+      {n:16, q:"L'approche par les risques permet d'adapter les mesures LCB/FT au niveau de risque identifié.", a:"Vrai"},
+      {n:17, q:"L'APR signifie que les entités à faible risque peuvent ignorer toute obligation LCB/FT.", a:"Faux",
+       e:"L'APR ne supprime pas les obligations : elle les calibre. Même une entité à faible risque doit identifier ses clients, appliquer une vigilance (éventuellement simplifiée) et maintenir une documentation."},
+      {n:18, q:"La cartographie des risques est un outil central de l'APR.", a:"Vrai"},
+      {n:19, q:"L'APR exige d'identifier, évaluer et comprendre les risques avant de les atténuer.", a:"Vrai"},
+      {n:20, q:"Le risque inhérent est le risque résiduel après application des contrôles.", a:"Faux",
+       e:"Le risque inhérent est le risque brut AVANT contrôles. Le risque résiduel est le risque subsistant APRÈS application des contrôles. Cette distinction est fondamentale dans l'APR."},
+      {n:21, q:"Un risque résiduel élevé indique que les contrôles sont insuffisants.", a:"Vrai"},
+      {n:22, q:"L'APR interdit toute approche standardisée pour des clients similaires.", a:"Faux",
+       e:"L'APR est compatible avec des procédures standardisées par segments de clients présentant un profil similaire. Ces approches sont encouragées pour l'efficience, à condition de reposer sur une analyse de risque rigoureuse."},
+      {n:23, q:"Les facteurs de risque comprennent le client, le produit, la géographie et le canal de distribution.", a:"Vrai"},
+      {n:24, q:"Une entité peut décider d'accepter un risque résiduel sous certaines conditions.", a:"Vrai"},
+      {n:25, q:"La réévaluation périodique des risques est facultative dans l'APR.", a:"Faux",
+       e:"La réévaluation périodique est une obligation. Les risques évoluent avec l'environnement réglementaire, les nouvelles typologies et les changements d'activité. Une cartographie figée devient rapidement obsolète."},
+      {n:26, q:"L'APR s'applique à l'ensemble de l'organisation, pas uniquement au service compliance.", a:"Vrai"},
+      {n:27, q:"Un client à faible risque ne nécessite aucune vigilance.", a:"Faux",
+       e:"La vigilance simplifiée allège les mesures mais ne les supprime pas. L'identification reste obligatoire, la surveillance maintenue et tout soupçon doit être traité. La faiblesse du risque allège sans supprimer."},
+      {n:28, q:"La matrice des risques permet de croiser probabilité et impact.", a:"Vrai"},
+      {n:29, q:"L'APR peut conduire à refuser l'entrée en relation avec certains clients.", a:"Vrai"},
+      {n:30, q:"Les résultats de la cartographie des risques doivent être communiqués à la direction.", a:"Vrai"},
+    ]},
+    { title:"Partie 11 — Vigilance renforcée & simplifiée", items:[
+      {n:31, q:"La vigilance simplifiée peut s'appliquer aux clients présentant un risque clairement faible.", a:"Vrai"},
+      {n:32, q:"La vigilance simplifiée dispense totalement d'identifier le client.", a:"Faux",
+       e:"La vigilance simplifiée allège certaines obligations mais n'exonère jamais de l'identification. L'identité du client doit toujours être établie avant l'entrée en relation. C'est une obligation absolue."},
+      {n:33, q:"La vigilance renforcée est obligatoire pour toutes les PPE.", a:"Vrai"},
+      {n:34, q:"Les relations d'affaires à distance justifient toujours une vigilance renforcée.", a:"Faux",
+       e:"Avec le développement des procédures d'identification électronique fiables (eKYC), une relation à distance via des moyens robustes peut ne pas nécessiter de vigilance renforcée automatique. L'évaluation dépend des mesures mises en place."},
+      {n:35, q:"La vigilance renforcée implique d'examiner l'origine du patrimoine et des fonds.", a:"Vrai"},
+      {n:36, q:"Les pays à haut risque GAFI déclenchent automatiquement une vigilance renforcée.", a:"Vrai"},
+      {n:37, q:"La vigilance simplifiée est un droit automatique du client.", a:"Faux",
+       e:"La vigilance simplifiée est une décision unilatérale de l'entité assujettie après évaluation du risque. Le client ne peut pas la revendiquer. L'entité décide et documente sa décision."},
+      {n:38, q:"La décision d'appliquer une vigilance simplifiée doit être documentée.", a:"Vrai"},
+      {n:39, q:"Un compte de passage peut bénéficier d'une vigilance simplifiée.", a:"Faux",
+       e:"Un compte de passage présente un profil de risque élevé (absence de justification économique des flux) et appelle une vigilance renforcée, pas simplifiée."},
+      {n:40, q:"La vigilance renforcée peut inclure la collecte d'informations sur la structure actionnariale.", a:"Vrai"},
+      {n:41, q:"En vigilance renforcée, la fréquence de mise à jour du dossier est accrue.", a:"Vrai"},
+      {n:42, q:"Un produit d'épargne réglementé à faible plafond peut bénéficier de vigilance simplifiée.", a:"Vrai"},
+      {n:43, q:"L'approbation de la direction est requise pour l'entrée en relation avec une PPE.", a:"Vrai"},
+      {n:44, q:"La vigilance simplifiée s'applique automatiquement aux clients institutionnels.", a:"Faux",
+       e:"Les clients institutionnels peuvent bénéficier de vigilance simplifiée sous conditions, mais ce n'est pas automatique. L'entité doit évaluer le profil de risque et vérifier que les critères sont effectivement remplis."},
+      {n:45, q:"Le suivi des transactions est allégé en vigilance renforcée.", a:"Faux",
+       e:"C'est l'inverse : en vigilance renforcée, le suivi des transactions est intensifié. Des contrôles plus fréquents, une analyse approfondie des opérations atypiques et des mises à jour plus régulières sont requis."},
+    ]},
+  ]
+},
+{
+  id:"s4", label:"Série 4",
+  desc:"Tiers introducteur & externalisation · Fraude fiscale · Financement du terrorisme",
+  parts:[
+    { title:"Partie 12 — Tiers introducteur & externalisation", items:[
+      {n:1, q:"Un tiers introducteur peut réaliser les diligences KYC à la place de l'entité assujettie.", a:"Vrai"},
+      {n:2, q:"L'entité assujettie reste responsable des diligences même si elle recourt à un tiers introducteur.", a:"Vrai"},
+      {n:3, q:"Le recours à un tiers introducteur dispense d'obtenir les informations KYC.", a:"Faux",
+       e:"Le tiers introducteur permet de s'appuyer sur ses diligences, mais l'entité doit pouvoir y accéder immédiatement sur demande. La responsabilité finale reste avec l'entité assujettie."},
+      {n:4, q:"Le tiers introducteur doit être soumis à des obligations LCB/FT équivalentes.", a:"Vrai"},
+      {n:5, q:"L'externalisation de la fonction compliance est interdite à Monaco.", a:"Faux",
+       e:"L'externalisation est autorisée sous conditions. L'entité doit maintenir la supervision effective et ne peut pas externaliser sa responsabilité réglementaire ultime. Les décisions critiques (DS, refus de relation) restent en interne."},
+      {n:6, q:"Un tiers introducteur situé dans un pays tiers à haut risque peut être accepté sans conditions.", a:"Faux",
+       e:"Des vérifications renforcées sont requises sur sa fiabilité et son régime LCB/FT. Dans certains cas, l'utilisation d'un tiers dans une juridiction à haut risque peut être soumise à l'approbation de la direction."},
+      {n:7, q:"L'entité doit pouvoir accéder aux données KYC collectées par le tiers introducteur à tout moment.", a:"Vrai"},
+      {n:8, q:"L'accord de tiers introduction doit être formalisé par écrit.", a:"Vrai"},
+      {n:9, q:"En cas de défaillance du tiers introducteur, l'entité assujettie n'est pas exposée.", a:"Faux",
+       e:"La défaillance du tiers expose directement l'entité assujettie. Elle reste responsable des diligences KYC. Si le tiers fournit des informations erronées, l'entité peut être tenue pour responsable des manquements."},
+      {n:10, q:"Le prestataire externalisé peut prendre des décisions de DS à la place de l'entité.", a:"Faux",
+       e:"La décision de déposer une DS relève exclusivement de l'entité assujettie et de son responsable LCB/FT. Elle ne peut pas être déléguée à un prestataire externe."},
+      {n:11, q:"L'entité doit évaluer régulièrement la qualité des diligences réalisées par le tiers.", a:"Vrai"},
+      {n:12, q:"L'introduction par un groupe soumis aux mêmes normes peut faire l'objet de procédures simplifiées.", a:"Vrai"},
+      {n:13, q:"Le tiers introducteur conserve la responsabilité pénale en cas de défaillance.", a:"Faux",
+       e:"Si le tiers a failli, il peut engager sa propre responsabilité, mais l'entité assujettie conserve aussi la sienne. Les deux responsabilités peuvent être engagées simultanément. Il n'y a pas de transfert intégral."},
+      {n:14, q:"Les contrats d'externalisation LCB/FT doivent prévoir des clauses d'audit.", a:"Vrai"},
+      {n:15, q:"Un agent peut être assimilé à un tiers introducteur dans certains contextes.", a:"Vrai"},
+    ]},
+    { title:"Partie 13 — Fraude fiscale & infractions sous-jacentes", items:[
+      {n:16, q:"La fraude fiscale grave est une infraction sous-jacente au blanchiment de capitaux.", a:"Vrai"},
+      {n:17, q:"Toute optimisation fiscale constitue une infraction sous-jacente.", a:"Faux",
+       e:"L'optimisation fiscale légale n'est pas une infraction sous-jacente. C'est la fraude fiscale grave (dissimulation, fausse comptabilité, sociétés fictives) qui peut constituer une infraction. La frontière dépend de critères juridiques précis."},
+      {n:18, q:"Le blanchiment peut être poursuivi même si l'infraction principale n'est pas jugée.", a:"Vrai"},
+      {n:19, q:"Les paradis fiscaux sont toujours synonymes d'activité criminelle.", a:"Faux",
+       e:"Les juridictions à fiscalité avantageuse ne sont pas synonymes d'activité criminelle. Des structures légitimes peuvent y être domiciliées. La présence dans un paradis fiscal est un facteur de risque justifiant des diligences renforcées, non une présomption de culpabilité."},
+      {n:20, q:"L'évasion fiscale et la fraude fiscale sont des notions juridiquement identiques.", a:"Faux",
+       e:"La fraude fiscale est un délit pénal caractérisé par des actes intentionnels de dissimulation. L'évasion fiscale désigne l'utilisation de montages légaux pour minimiser l'impôt. Seule la fraude fiscale grave constitue une infraction sous-jacente au blanchiment."},
+      {n:21, q:"Les intermédiaires fiscaux peuvent être exposés au risque de complicité de blanchiment.", a:"Vrai"},
+      {n:22, q:"Une structure fiscale agressive peut constituer un indicateur de risque LCB/FT.", a:"Vrai"},
+      {n:23, q:"La corruption est une infraction sous-jacente au blanchiment.", a:"Vrai"},
+      {n:24, q:"Le trafic de stupéfiants est la seule infraction sous-jacente reconnue par le GAFI.", a:"Faux",
+       e:"Le GAFI reconnaît une liste étendue d'infractions : trafic de drogues, corruption, fraude, contrefaçon, cybercriminalité, traite des êtres humains, trafic d'armes, crimes environnementaux, fraude fiscale grave, etc."},
+      {n:25, q:"Les revenus non déclarés peuvent être considérés comme des fonds d'origine illicite.", a:"Vrai"},
+      {n:26, q:"Un compte offshore est systématiquement associé à une fraude fiscale.", a:"Faux",
+       e:"Un compte offshore déclaré aux autorités fiscales n'est pas frauduleux. Ce qui importe est la transparence fiscale. L'offshore non déclaré peut constituer une fraude, pas l'offshore en soi."},
+      {n:27, q:"Le partage d'informations fiscales entre États facilite la détection du blanchiment.", a:"Vrai"},
+      {n:28, q:"Les conventions fiscales bilatérales peuvent limiter l'accès aux informations bancaires.", a:"Vrai"},
+      {n:29, q:"La déclaration de soupçon peut être liée à une présomption de fraude fiscale.", a:"Vrai"},
+      {n:30, q:"Le professionnel doit qualifier juridiquement l'infraction sous-jacente avant de déposer une DS.", a:"Faux",
+       e:"Le professionnel n'est pas tenu de qualifier juridiquement l'infraction avant la DS. Il suffit d'un soupçon raisonnable que les fonds proviennent d'une activité illicite. La qualification relève des autorités judiciaires et de SICCFIN."},
+    ]},
+    { title:"Partie 14 — Financement du terrorisme (FT)", items:[
+      {n:31, q:"Le financement du terrorisme peut impliquer des fonds d'origine licite.", a:"Vrai"},
+      {n:32, q:"Les montants impliqués dans le FT sont toujours élevés.", a:"Faux",
+       e:"Le FT peut impliquer des montants très faibles. Des attentats ont été perpétrés pour quelques milliers d'euros. Cette caractéristique rend la détection difficile. C'est le contexte comportemental qui importe, pas nécessairement le montant."},
+      {n:33, q:"Le FT vise à financer des actes terroristes, des organisations ou des individus.", a:"Vrai"},
+      {n:34, q:"Le FT suit nécessairement les mêmes circuits que le blanchiment de capitaux.", a:"Faux",
+       e:"Le FT et le blanchiment ont des logiques inverses : le blanchiment 'nettoie' des fonds illicites, le FT achemine des fonds (licites ou non) vers des actes terroristes. Les circuits, montants et techniques sont souvent très différents."},
+      {n:35, q:"Les associations à but non lucratif peuvent être utilisées pour financer le terrorisme.", a:"Vrai"},
+      {n:36, q:"Un virement vers une zone de conflit est toujours suspect.", a:"Faux",
+       e:"Des flux légitimes existent vers les zones de conflit : aide humanitaire, soutien à des proches, activité commerciale. Ce qui compte est la cohérence avec le profil client et l'existence de signaux additionnels de risque."},
+      {n:37, q:"Le FT peut être détecté par une analyse de cohérence entre profil et transactions.", a:"Vrai"},
+      {n:38, q:"La Recommandation 5 du GAFI porte spécifiquement sur le FT.", a:"Vrai"},
+      {n:39, q:"Le soupçon de FT est soumis au même régime déclaratif que le blanchiment à Monaco.", a:"Vrai"},
+      {n:40, q:"Les crypto-actifs peuvent être utilisés pour financer le terrorisme.", a:"Vrai"},
+      {n:41, q:"La prolifération des armes de destruction massive relève d'un régime distinct du FT.", a:"Vrai"},
+      {n:42, q:"Un professionnel n'est pas obligé de signaler un soupçon de FT s'il est incertain.", a:"Faux",
+       e:"L'incertitude n'exonère pas de l'obligation de signalement. La DS repose sur le soupçon raisonnable, non la certitude. En matière de FT, la prudence commande de déclarer même en cas de doute. Ne pas déclarer peut engager la responsabilité pénale."},
+      {n:43, q:"Le financement d'un seul individu radical peut constituer un acte de FT.", a:"Vrai"},
+      {n:44, q:"Les micro-transactions répétées peuvent être un signal de FT.", a:"Vrai"},
+      {n:45, q:"L'obligation de gel immédiat s'applique en cas de soupçon de FT.", a:"Vrai"},
+    ]},
+  ]
+},
+{
+  id:"s5", label:"Série 5",
+  desc:"GAFI avancé · APR avancé · Vigilance avancée · Consolidation transversale",
+  parts:[
+    { title:"Partie 15 — GAFI & normes internationales (avancé)", items:[
+      {n:1, q:"Le cycle d'évaluation mutuelle GAFI comprend un suivi entre deux évaluations complètes.", a:"Vrai"},
+      {n:2, q:"L'efficacité d'un dispositif LCB/FT s'évalue uniquement par la conformité technique.", a:"Faux",
+       e:"Depuis la 4e ronde, l'efficacité est évaluée séparément. Un pays peut avoir un cadre législatif conforme mais un dispositif peu efficace en pratique. Les 11 Résultats Immédiats mesurent les outcomes concrets (confiscations, condamnations, DS utiles)."},
+      {n:3, q:"Le GAFI publie régulièrement des typologies de blanchiment et de financement du terrorisme.", a:"Vrai"},
+      {n:4, q:"Un pays peut être retiré de la liste grise sans avoir corrigé toutes ses défaillances.", a:"Faux",
+       e:"Le retrait de la liste grise exige que le pays ait substantiellement corrigé l'ensemble des défaillances de son plan d'action. Le GAFI ne retire un pays de la liste que lorsque tous les points critiques sont traités."},
+      {n:5, q:"Les Résultats Immédiats (RI) mesurent l'efficacité du dispositif LCB/FT d'un pays.", a:"Vrai"},
+      {n:6, q:"La Recommandation 24 du GAFI porte sur la transparence des personnes morales.", a:"Vrai"},
+      {n:7, q:"Le GAFI recommande l'enregistrement centralisé des bénéficiaires effectifs.", a:"Vrai"},
+      {n:8, q:"Les crypto-actifs sont hors du périmètre des Recommandations du GAFI.", a:"Faux",
+       e:"Le GAFI a intégré les actifs virtuels depuis la révision de la Rec. 15 (2018-2019). Les PSAV/VASPs sont soumis aux mêmes obligations LCB/FT que les établissements financiers traditionnels, y compris la Travel Rule."},
+      {n:9, q:"La Recommandation 15 du GAFI a été révisée pour intégrer les actifs virtuels.", a:"Vrai"},
+      {n:10, q:"Les PSAV (Prestataires de Services sur Actifs Virtuels) doivent s'enregistrer selon le GAFI.", a:"Vrai"},
+      {n:11, q:"Le GAFI impose aux pays membres de pénaliser le blanchiment de capitaux.", a:"Vrai"},
+      {n:12, q:"Une évaluation mutuelle favorable garantit l'absence de risques LCB/FT dans un pays.", a:"Faux",
+       e:"Une bonne évaluation indique un dispositif globalement conforme et efficace, mais ne garantit pas l'absence de risques. Des risques subsistent toujours et évoluent constamment avec les nouvelles typologies."},
+      {n:13, q:"La Recommandation 34 porte sur les orientations et retours d'information aux professions.", a:"Vrai"},
+      {n:14, q:"Le GAFI reconnaît l'importance du secteur privé dans la lutte contre le blanchiment.", a:"Vrai"},
+      {n:15, q:"Le GAFI peut imposer des sanctions économiques directement aux États membres.", a:"Faux",
+       e:"Le GAFI n'a pas de pouvoir de sanction directe. Son influence passe par la pression politique (listings publics) et les conséquences que font peser les institutions financières privées sur les pays listés."},
+    ]},
+    { title:"Partie 16 — Approche par les risques (avancé)", items:[
+      {n:16, q:"L'évaluation nationale des risques (ENR) guide la politique LCB/FT d'un État.", a:"Vrai"},
+      {n:17, q:"Les entités assujetties doivent aligner leur propre évaluation des risques sur l'ENR.", a:"Vrai"},
+      {n:18, q:"Un pays peut adopter une APR sans avoir réalisé d'ENR.", a:"Faux",
+       e:"L'ENR est le fondement de l'APR au niveau étatique. Sans ENR, les ressources ne peuvent pas être allouées de manière rationnelle. L'ENR est un préalable indispensable à une APR cohérente (Rec. 1 GAFI)."},
+      {n:19, q:"L'APR permet d'allouer les ressources LCB/FT là où les risques sont les plus élevés.", a:"Vrai"},
+      {n:20, q:"Les risques inhérents d'un secteur sont identiques pour toutes les entités de ce secteur.", a:"Faux",
+       e:"Le risque sectoriel définit un niveau de référence, mais chaque entité a ses propres risques inhérents selon sa clientèle, ses produits, sa géographie. Une banque de gestion privée internationale a un profil très différent d'une banque de détail locale."},
+      {n:21, q:"La tolérance au risque d'une entité doit être définie par la direction.", a:"Vrai"},
+      {n:22, q:"Le risque de réputation fait partie des risques à gérer dans l'APR.", a:"Vrai"},
+      {n:23, q:"Une entité peut déléguer la définition de sa tolérance au risque à son prestataire externe.", a:"Faux",
+       e:"La tolérance au risque est une décision stratégique relevant exclusivement de la direction générale. Elle ne peut pas être déléguée à un prestataire externe qui n'a ni la légitimité ni la responsabilité pour cette décision."},
+      {n:24, q:"L'APR exige une réévaluation des risques lors de changements organisationnels majeurs.", a:"Vrai"},
+      {n:25, q:"Les nouvelles technologies et produits doivent faire l'objet d'une évaluation des risques avant lancement.", a:"Vrai"},
+      {n:26, q:"Un portefeuille de clients exclusivement résidents monégasques ne présente aucun risque géographique.", a:"Faux",
+       e:"Même des clients résidents à Monaco peuvent avoir des activités, des comptes ou un patrimoine dans des pays à risque. La résidence ne neutralise pas les risques géographiques liés aux activités internationales des clients."},
+      {n:27, q:"La documentation de l'APR est exigée en cas de contrôle par l'autorité de supervision.", a:"Vrai"},
+      {n:28, q:"Une entité de petite taille est dispensée d'APR formalisée.", a:"Faux",
+       e:"La taille ne dispense pas de l'APR. La formalisation peut être proportionnée à la taille, mais l'obligation d'identifier, évaluer et gérer les risques s'impose à toutes les entités assujetties, même les TPE et professions libérales."},
+      {n:29, q:"L'APR est un processus continu et non un exercice ponctuel.", a:"Vrai"},
+      {n:30, q:"Les scénarios de risque émergents doivent être intégrés dans la cartographie des risques.", a:"Vrai"},
+    ]},
+    { title:"Partie 17 — Vigilance renforcée & simplifiée (avancé)", items:[
+      {n:31, q:"La vigilance renforcée peut s'appliquer à des situations qui ne sont pas listées dans la loi.", a:"Vrai"},
+      {n:32, q:"La prise en charge des frais d'un client par un tiers inconnu justifie une vigilance renforcée.", a:"Vrai"},
+      {n:33, q:"La vigilance simplifiée peut être maintenue même si le risque du client évolue.", a:"Faux",
+       e:"La vigilance est dynamique. Si le profil de risque évolue (nouvelles activités, transactions inhabituelles, signaux d'alerte), le niveau doit être adapté. La mise à jour des dossiers est précisément conçue pour détecter ces évolutions."},
+      {n:34, q:"En vigilance renforcée, l'entité doit documenter les raisons justifiant le maintien de la relation.", a:"Vrai"},
+      {n:35, q:"Les transactions complexes sans justification économique évidente déclenchent une vigilance renforcée.", a:"Vrai"},
+      {n:36, q:"La vigilance renforcée se limite à la phase d'entrée en relation.", a:"Faux",
+       e:"La vigilance renforcée s'applique tout au long de la relation. Elle implique un suivi continu, des mises à jour plus fréquentes, une attention accrue aux opérations atypiques. Pour les PPE, le suivi renforcé est permanent."},
+      {n:37, q:"L'obtention de l'approbation d'un cadre supérieur est requise pour maintenir certaines relations à risque élevé.", a:"Vrai"},
+      {n:38, q:"La vigilance simplifiée peut s'appliquer aux cotisations d'assurance-vie à primes très faibles.", a:"Vrai"},
+      {n:39, q:"Une PPE étrangère présente un risque supérieur à une PPE nationale.", a:"Vrai"},
+      {n:40, q:"Le degré de vigilance peut évoluer à la hausse ou à la baisse selon l'évolution du profil client.", a:"Vrai"},
+      {n:41, q:"La vigilance renforcée peut inclure des visites sur place chez le client.", a:"Vrai"},
+      {n:42, q:"Un client non-résident de Monaco nécessite automatiquement une vigilance renforcée.", a:"Faux",
+       e:"La non-résidence est un facteur à évaluer mais ne déclenche pas automatiquement de vigilance renforcée. L'évaluation porte sur l'ensemble du profil : nationalité, pays de résidence, activités, produits, origine des fonds."},
+      {n:43, q:"La source de richesse et la source des fonds sont deux notions identiques.", a:"Faux",
+       e:"La source de richesse désigne l'origine du patrimoine global (comment le client s'est enrichi). La source des fonds désigne l'origine des fonds spécifiques de la transaction. En vigilance renforcée, les deux doivent être établies."},
+      {n:44, q:"L'application de vigilance simplifiée doit être réexaminée lors de la mise à jour du dossier.", a:"Vrai"},
+      {n:45, q:"La vigilance renforcée peut conduire à clôturer une relation d'affaires.", a:"Vrai"},
+    ]},
+    { title:"Partie 18 — Tiers introducteur, fraude fiscale & FT (consolidation)", items:[
+      {n:46, q:"Un tiers introducteur doit transmettre les données KYC à l'entité assujettie sans délai si demandé.", a:"Vrai"},
+      {n:47, q:"La chaîne de responsabilité en cas de défaillance du tiers introducteur remonte à l'entité assujettie.", a:"Vrai"},
+      {n:48, q:"L'entité peut se fier à un tiers introducteur non soumis à supervision sans vérification.", a:"Faux",
+       e:"L'absence de supervision est un facteur de risque important. L'entité doit évaluer si le tiers applique des normes équivalentes, obtenir des garanties contractuelles et réaliser ses propres diligences. Un tiers non supervisé ne peut généralement pas être qualifié de tiers introducteur reconnu."},
+      {n:49, q:"La fraude fiscale aggravée peut déclencher une obligation de DS à Monaco.", a:"Vrai"},
+      {n:50, q:"Un trust peut être utilisé pour dissimuler la fraude fiscale d'un bénéficiaire.", a:"Vrai"},
+      {n:51, q:"Les professionnels du droit sont totalement exemptés d'obligations LCB/FT liées à la fraude fiscale.", a:"Faux",
+       e:"Les exemptions visent à protéger le secret professionnel dans le cadre de l'assistance juridique et de la défense. Lorsqu'un avocat ou notaire intervient dans des opérations financières ou immobilières, les obligations LCB/FT s'appliquent pleinement."},
+      {n:52, q:"Le financement du terrorisme peut provenir de petits dons agrégés.", a:"Vrai"},
+      {n:53, q:"L'autofinancement d'un acte terroriste par l'auteur lui-même ne constitue pas du FT.", a:"Faux",
+       e:"L'autofinancement d'un acte terroriste constitue bien du FT. La Rec. 5 du GAFI couvre explicitement cette situation. Les attentats 'low cost' sont souvent autofinancés par leur auteur."},
+      {n:54, q:"Les listes de désignation terroriste sont contraignantes pour les entités assujetties monégasques.", a:"Vrai"},
+      {n:55, q:"Un virement vers une ONG dans une zone de conflit est un indicateur automatique de FT.", a:"Faux",
+       e:"Des raisons humanitaires légitimes peuvent justifier ce transfert. La vigilance s'impose pour vérifier la nature et réputation de l'ONG et s'assurer qu'elle n'est pas désignée sur des listes de sanctions."},
+      {n:56, q:"Le recrutement et la radicalisation peuvent être financés via des canaux légaux.", a:"Vrai"},
+      {n:57, q:"Le rôle du tiers introducteur cesse une fois la relation d'affaires établie.", a:"Vrai"},
+      {n:58, q:"L'utilisation de comptes de tiers pour masquer l'origine de fonds est un indicateur de blanchiment.", a:"Vrai"},
+      {n:59, q:"La fraude à la TVA peut constituer une infraction sous-jacente au blanchiment.", a:"Vrai"},
+      {n:60, q:"Une DS déposée pour FT présumé exige une preuve de financement effectif d'un acte terroriste.", a:"Faux",
+       e:"La DS repose sur le soupçon raisonnable, non sur la preuve d'un financement effectif. En matière de FT, la réactivité est critique. Attendre la preuve d'un acte terroriste annulerait l'utilité préventive de la DS."},
+      {n:61, q:"Les entités assujetties peuvent librement choisir leurs tiers introducteurs sans critère LCB/FT.", a:"Faux",
+       e:"Le choix est encadré par des critères LCB/FT précis. L'entité doit vérifier que le tiers est supervisé, applique des normes équivalentes et met en œuvre des procédures adéquates."},
+      {n:62, q:"Un schéma de fraude fiscale complexe peut masquer simultanément du blanchiment.", a:"Vrai"},
+      {n:63, q:"Le partage d'informations entre entités d'un même groupe sur des soupçons de FT est autorisé.", a:"Vrai"},
+      {n:64, q:"Les infractions douanières peuvent constituer une infraction sous-jacente au blanchiment.", a:"Vrai"},
+      {n:65, q:"Le gel préventif des avoirs en cas de soupçon de FT peut être ordonné avant toute condamnation.", a:"Vrai"},
+      {n:66, q:"Un tiers introducteur situé dans un pays à haut risque GAFI peut être utilisé sous conditions strictes.", a:"Vrai"},
+      {n:67, q:"La complicité de blanchiment requiert un acte délibéré de dissimulation.", a:"Vrai"},
+      {n:68, q:"Les infrastructures critiques peuvent être ciblées par des financements terroristes.", a:"Vrai"},
+      {n:69, q:"Un système de tiers introducteur mal encadré peut créer un maillon faible dans la chaîne LCB/FT.", a:"Vrai"},
+      {n:70, q:"La confiscation des produits du crime est une mesure préconisée par le GAFI.", a:"Vrai"},
+      {n:71, q:"Un professionnel peut refuser une relation d'affaires proposée par un tiers introducteur.", a:"Vrai"},
+      {n:72, q:"Le financement du terrorisme est toujours détectable par des montants élevés.", a:"Faux",
+       e:"Le FT implique souvent des montants très faibles. Des attentats ont été perpétrés pour quelques centaines d'euros. La détection repose sur des indicateurs comportementaux et contextuels, pas sur des seuils de montants."},
+      {n:73, q:"La prévention du FT relève uniquement des services de renseignement.", a:"Faux",
+       e:"La prévention du FT est une responsabilité partagée entre renseignement, autorités judiciaires, superviseurs et entités assujetties. Le secteur privé constitue la première ligne de détection via ses obligations de vigilance et de DS."},
+      {n:74, q:"L'évasion fiscale non aggravée constitue toujours une infraction sous-jacente au blanchiment à Monaco.", a:"Faux",
+       e:"Seule la fraude fiscale grave (actes intentionnels de dissimulation, délit pénal caractérisé) constitue une infraction sous-jacente. L'optimisation fiscale légale et l'évasion non qualifiée pénalement ne le constituent pas."},
+      {n:75, q:"Un contrat d'externalisation LCB/FT doit prévoir les conditions de résiliation et de continuité.", a:"Vrai"},
+    ]},
+  ]
+},
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+const state = {};  // key: "s1_p0_3" → "Vrai"|"Faux"
+
+function stateKey(sIdx, pIdx, n) { return `${sIdx}_${pIdx}_${n}`; }
+
+// ─── SCORE HELPERS ────────────────────────────────────────────────────────────
+function globalStats() {
+  let answered = 0, correct = 0;
+  SERIES.forEach((s, si) => s.parts.forEach((p, pi) => p.items.forEach(item => {
+    const k = stateKey(si, pi, item.n);
+    if (state[k]) { answered++; if (state[k] === item.a) correct++; }
+  })));
+  return { answered, correct, wrong: answered - correct };
+}
+
+function serieStats(si) {
+  let total = 0, answered = 0, correct = 0;
+  SERIES[si].parts.forEach((p, pi) => p.items.forEach(item => {
+    total++;
+    const k = stateKey(si, pi, item.n);
+    if (state[k]) { answered++; if (state[k] === item.a) correct++; }
+  }));
+  return { total, answered, correct, wrong: answered - correct };
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function buildNav() {
+  const nav = document.getElementById('nav-tabs');
+  SERIES.forEach((s, si) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (si === 0 ? ' active' : '');
+    btn.textContent = s.label;
+    btn.dataset.si = si;
+    btn.onclick = () => switchTab(si);
+    nav.appendChild(btn);
+  });
+}
+
+function buildContent() {
+  const main = document.getElementById('main-content');
+  SERIES.forEach((s, si) => {
+    const panel = document.createElement('div');
+    panel.className = 'serie-panel' + (si === 0 ? ' active' : '');
+    panel.id = 'panel-' + si;
+
+    const hdr = document.createElement('div');
+    hdr.className = 'serie-header';
+    hdr.innerHTML = `<h2>${s.label}</h2><p>${s.desc}</p>
+      <div class="serie-stats" id="stats-${si}"></div>`;
+    panel.appendChild(hdr);
+
+    s.parts.forEach((p, pi) => {
+      const ptDiv = document.createElement('div');
+      ptDiv.className = 'part-title';
+      ptDiv.textContent = p.title;
+      panel.appendChild(ptDiv);
+
+      p.items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'q-card';
+        card.id = `card-${si}-${pi}-${item.n}`;
+
+        const inner = document.createElement('div');
+        inner.className = 'q-inner';
+        inner.innerHTML = `
+          <span class="q-num">${item.n}</span>
+          <span class="q-text">${item.q}</span>
+          <div class="q-actions">
+            <button class="btn-vf" id="vbtn-${si}-${pi}-${item.n}" onclick="answer(${si},${pi},${item.n},'Vrai')">Vrai</button>
+            <button class="btn-vf" id="fbtn-${si}-${pi}-${item.n}" onclick="answer(${si},${pi},${item.n},'Faux')">Faux</button>
+          </div>
+          <span class="result-badge" id="rbadge-${si}-${pi}-${item.n}"></span>`;
+        card.appendChild(inner);
+
+        if (item.e) {
+          const expl = document.createElement('div');
+          expl.className = 'q-expl';
+          expl.id = `expl-${si}-${pi}-${item.n}`;
+          expl.innerHTML = `<strong>Explication&nbsp;:</strong> ${item.e}`;
+          card.appendChild(expl);
+        }
+
+        panel.appendChild(card);
+      });
+    });
+
+    const resetBar = document.createElement('div');
+    resetBar.className = 'reset-bar';
+    resetBar.innerHTML = `
+      <button class="btn-reset" onclick="resetSerie(${si})">Recommencer cette série</button>
+      <div class="final-score" id="fscore-${si}"></div>`;
+    panel.appendChild(resetBar);
+
+    main.appendChild(panel);
+  });
+}
+
+function switchTab(si) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', i===si));
+  document.querySelectorAll('.serie-panel').forEach((p,i) => p.classList.toggle('active', i===si));
+}
+
+function answer(si, pi, n, choice) {
+  const k = stateKey(si, pi, n);
+  if (state[k]) return;
+  state[k] = choice;
+  refreshCard(si, pi, n);
+  refreshSerieStats(si);
+  refreshGlobal();
+}
+
+function refreshCard(si, pi, n) {
+  const p = SERIES[si].parts[pi];
+  const item = p.items.find(i => i.n === n);
+  const k = stateKey(si, pi, n);
+  const chosen = state[k];
+  const card = document.getElementById(`card-${si}-${pi}-${n}`);
+  const vBtn = document.getElementById(`vbtn-${si}-${pi}-${n}`);
+  const fBtn = document.getElementById(`fbtn-${si}-${pi}-${n}`);
+  const badge = document.getElementById(`rbadge-${si}-${pi}-${n}`);
+
+  if (!chosen) {
+    card.className = 'q-card';
+    vBtn.className = 'btn-vf'; vBtn.disabled = false;
+    fBtn.className = 'btn-vf'; fBtn.disabled = false;
+    badge.textContent = ''; badge.className = 'result-badge';
+    return;
+  }
+
+  const isCorrect = chosen === item.a;
+  card.className = 'q-card ' + (isCorrect ? 'answered-correct' : 'answered-wrong');
+  vBtn.disabled = true; fBtn.disabled = true;
+
+  if (chosen === 'Vrai') {
+    vBtn.className = 'btn-vf ' + (isCorrect ? 'correct' : 'wrong');
+    if (!isCorrect) fBtn.className = 'btn-vf reveal';
+  } else {
+    fBtn.className = 'btn-vf ' + (isCorrect ? 'correct' : 'wrong');
+    if (!isCorrect) vBtn.className = 'btn-vf reveal';
+  }
+
+  badge.textContent = isCorrect ? '✓ Correct' : '✗ Incorrect';
+  badge.className = 'result-badge ' + (isCorrect ? 'ok' : 'ko');
+}
+
+function refreshSerieStats(si) {
+  const st = serieStats(si);
+  const el = document.getElementById(`stats-${si}`);
+  el.innerHTML = `
+    <span class="stat-pill total">${st.total} questions</span>
+    <span class="stat-pill answered">${st.answered} répondues</span>
+    <span class="stat-pill correct">✓ ${st.correct} correctes</span>
+    <span class="stat-pill wrong">✗ ${st.wrong} incorrectes</span>`;
+  const fs = document.getElementById(`fscore-${si}`);
+  if (st.answered === st.total) {
+    fs.style.display = 'block';
+    const pct = Math.round(st.correct / st.total * 100);
+    fs.textContent = `Score final : ${st.correct} / ${st.total} (${pct}%)`;
+  } else {
+    fs.style.display = 'none';
+  }
+}
+
+function refreshGlobal() {
+  const g = globalStats();
+  document.getElementById('g-answered').textContent = g.answered;
+  document.getElementById('g-correct').textContent = g.correct;
+  document.getElementById('g-wrong').textContent = g.wrong;
+  document.getElementById('global-progress-fill').style.width = (g.answered / 300 * 100) + '%';
+}
+
+function resetSerie(si) {
+  SERIES[si].parts.forEach((p, pi) => p.items.forEach(item => {
+    delete state[stateKey(si, pi, item.n)];
+    refreshCard(si, pi, item.n);
+  }));
+  refreshSerieStats(si);
+  refreshGlobal();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+buildNav();
+buildContent();
+SERIES.forEach((_, si) => refreshSerieStats(si));
+refreshGlobal();
+</script>
+</body>
+</html>

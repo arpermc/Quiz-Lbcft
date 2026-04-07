@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz LCB/FT Monaco — Séries 6-7-8 (180 Questions)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #1F3864; --navy-light: #2c4f8a;
+    --green: #375623; --green-bg: #E2EFDA; --green-border: #639922;
+    --red: #843C0C; --red-bg: #FCE4D6; --red-border: #E24B4A;
+    --grey: #f5f5f5; --grey2: #e8e8e8; --text: #2c2c2c; --text-muted: #666;
+    --white: #ffffff; --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  body { font-family: Arial, Helvetica, sans-serif; background: #f0f2f5; color: var(--text); font-size: 15px; line-height: 1.5; }
+  .site-header { background: var(--navy); color: #fff; padding: 24px 32px 20px; }
+  .site-header h1 { font-size: 21px; font-weight: 700; }
+  .site-header p { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+  .global-score-bar { background: rgba(255,255,255,0.1); border-radius: 6px; padding: 10px 16px; margin-top: 14px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+  .global-score-bar span { font-size: 13px; color: rgba(255,255,255,0.85); }
+  .global-score-bar strong { color: #fff; font-size: 15px; }
+  #global-progress { flex: 1; min-width: 120px; height: 6px; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; }
+  #global-progress-fill { height: 100%; background: #7ac94a; width: 0%; transition: width 0.3s; border-radius: 3px; }
+  .nav-tabs { background: var(--navy-light); display: flex; overflow-x: auto; scrollbar-width: none; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 11px 20px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.65); background: none; border: none; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.15s; }
+  .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .tab-btn.active { color: #fff; border-bottom-color: #7ac94a; }
+  .main { max-width: 960px; margin: 24px auto; padding: 0 16px 48px; }
+  .serie-panel { display: none; }
+  .serie-panel.active { display: block; }
+  .serie-header { background: var(--white); border-radius: 10px; padding: 20px 24px; margin-bottom: 20px; box-shadow: var(--shadow); border-left: 5px solid var(--navy); }
+  .serie-header h2 { font-size: 18px; color: var(--navy); font-weight: 700; }
+  .serie-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .serie-stats { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .stat-pill { font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
+  .stat-pill.total { background: #e8eef7; color: var(--navy); }
+  .stat-pill.answered { background: #e8f4e8; color: #2d6e2d; }
+  .stat-pill.correct { background: var(--green-bg); color: var(--green); }
+  .stat-pill.wrong { background: var(--red-bg); color: var(--red); }
+  .part-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 1.5px solid var(--grey2); }
+  .q-card { background: var(--white); border-radius: 8px; margin-bottom: 8px; box-shadow: var(--shadow); overflow: hidden; transition: box-shadow 0.15s; }
+  .q-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+  .q-card.answered-correct { border-left: 4px solid var(--green-border); }
+  .q-card.answered-wrong { border-left: 4px solid var(--red-border); }
+  .q-inner { display: grid; grid-template-columns: 36px 1fr auto auto; align-items: center; gap: 10px; padding: 12px 16px; }
+  .q-num { font-size: 12px; color: var(--text-muted); text-align: right; font-weight: 500; }
+  .q-text { font-size: 14px; color: var(--text); line-height: 1.45; }
+  .q-actions { display: flex; gap: 6px; align-items: center; }
+  .btn-vf { padding: 5px 14px; font-size: 12px; font-weight: 600; border-radius: 5px; border: 1.5px solid #ccc; background: var(--white); color: var(--text); cursor: pointer; transition: all 0.12s; min-width: 50px; text-align: center; }
+  .btn-vf:hover:not(:disabled) { background: var(--grey); border-color: #aaa; }
+  .btn-vf:disabled { cursor: default; }
+  .btn-vf.correct { background: var(--green-bg); color: var(--green); border-color: var(--green-border); }
+  .btn-vf.wrong { background: var(--red-bg); color: var(--red); border-color: var(--red-border); }
+  .btn-vf.reveal { background: var(--green-bg); color: var(--green); border-color: var(--green-border); opacity: 0.75; }
+  .result-badge { font-size: 12px; font-weight: 700; min-width: 72px; text-align: right; }
+  .result-badge.ok { color: var(--green); }
+  .result-badge.ko { color: var(--red); }
+  .q-expl { display: none; padding: 10px 16px 14px 62px; font-size: 13px; color: #444; line-height: 1.6; border-top: 1px solid var(--grey2); background: #fafafa; }
+  .q-expl strong { color: var(--navy); }
+  .q-card.answered-wrong .q-expl { display: block; }
+  .reset-bar { margin-top: 28px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .btn-reset { padding: 9px 22px; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1.5px solid #bbb; background: var(--white); color: var(--text); cursor: pointer; }
+  .btn-reset:hover { background: var(--grey); }
+  .final-score { font-size: 14px; font-weight: 700; padding: 9px 18px; border-radius: 6px; background: var(--green-bg); color: var(--green); border: 1.5px solid var(--green-border); display: none; }
+  @media (max-width: 600px) {
+    .q-inner { grid-template-columns: 28px 1fr; gap: 6px; }
+    .q-actions { grid-column: 2; }
+    .result-badge { display: none; }
+    .q-expl { padding-left: 16px; }
+  }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <h1>LCB/FT Monaco — Séries 6, 7 &amp; 8</h1>
+  <p>Trusts &amp; structures patrimoniales · Immobilier de luxe · Supervision AMSF · Correspondant banking &mdash; 180 questions</p>
+  <div class="global-score-bar">
+    <span>Progression : <strong id="g-answered">0</strong> / 180</span>
+    <div id="global-progress"><div id="global-progress-fill"></div></div>
+    <span>Score : <strong id="g-correct">0</strong> correctes &nbsp;|&nbsp; <strong id="g-wrong">0</strong> incorrectes</span>
+  </div>
+</header>
+<nav class="nav-tabs" id="nav-tabs"></nav>
+<main class="main" id="main-content"></main>
+<script>
+const TOTAL = 180;
+const SERIES = [
+{id:"s6",label:"Série 6",desc:"Trusts & structures patrimoniales · Blanchiment par l'immobilier de luxe · Supervision AMSF",parts:[
+  {title:"Partie 19 — Trusts, fiducies & structures patrimoniales",items:[
+    {n:1,q:"Un trust est une structure juridique dans laquelle un settlor transfère des actifs à un trustee pour le bénéfice d'un bénéficiaire.",a:"Vrai"},
+    {n:2,q:"Le droit monégasque reconnaît le trust comme une institution de droit interne.",a:"Faux",e:"Monaco ne dispose pas d'une législation interne sur les trusts. La Principauté reconnaît les trusts étrangers constitués conformément à leur loi d'origine, mais le trust n'est pas une institution de droit monégasque. Les structures patrimoniales monégasques sont principalement la SCI, la fondation et la fiducie de droit civil français."},
+    {n:3,q:"Le bénéficiaire d'un trust doit être identifié dans le cadre des obligations LCB/FT.",a:"Vrai"},
+    {n:4,q:"Un trust discrétionnaire permet au trustee de décider à sa discrétion des distributions aux bénéficiaires.",a:"Vrai"},
+    {n:5,q:"La classe de bénéficiaires d'un trust discrétionnaire doit être intégralement identifiée dès l'entrée en relation.",a:"Faux",e:"Pour un trust discrétionnaire, lorsque les bénéficiaires ne sont pas encore déterminés, il peut suffire d'identifier la classe de bénéficiaires. L'identification individuelle complète intervient au plus tard lorsque les bénéficiaires sont désignés ou exercent leurs droits."},
+    {n:6,q:"Le protecteur d'un trust (protector) peut exercer un contrôle sur les décisions du trustee.",a:"Vrai"},
+    {n:7,q:"Un trust peut être utilisé pour soustraire des actifs aux créanciers de manière frauduleuse.",a:"Vrai"},
+    {n:8,q:"Le trustee est toujours le bénéficiaire effectif des actifs détenus en trust.",a:"Faux",e:"Le trustee détient juridiquement les actifs mais pas en son nom propre : il les administre dans l'intérêt des bénéficiaires. Le bénéficiaire effectif au sens LCB/FT est le bénéficiaire réel du trust (et/ou le settlor selon son degré de contrôle), non le trustee."},
+    {n:9,q:"La fiducie de droit français est une structure équivalente au trust anglosaxon.",a:"Faux",e:"La fiducie française (loi du 19 février 2007) est un mécanisme spécifique au droit civil, aux finalités strictement encadrées (gestion, sûreté). Elle diffère du trust anglosaxon par sa durée limitée, son objet restreint et l'absence de dimension de planification successorale ouverte."},
+    {n:10,q:"Les intermédiaires qui constituent ou administrent des trusts sont assujettis aux obligations LCB/FT selon le GAFI.",a:"Vrai"},
+    {n:11,q:"Un trust peut être utilisé pour dissimuler l'identité du véritable propriétaire d'un bien immobilier.",a:"Vrai"},
+    {n:12,q:"Le settlor d'un trust perd tout contrôle sur les actifs après leur transfert en trust irrévocable.",a:"Faux",e:"Dans certains trusts 'settlor-reserved powers trusts', le settlor conserve des pouvoirs étendus (révoquer, changer de trustee, modifier les termes). L'irrévocabilité formelle n'exclut pas le contrôle factuel et le settlor peut rester le bénéficiaire effectif au sens LCB/FT."},
+    {n:13,q:"Une fondation monégasque peut être utilisée comme structure de gestion patrimoniale.",a:"Vrai"},
+    {n:14,q:"Les structures fiduciaires complexes à plusieurs couches réduisent automatiquement le risque LCB/FT.",a:"Faux",e:"Les structures multicouches (trust → holding → participations) augmentent le risque LCB/FT en rendant l'identification du bénéficiaire effectif plus difficile. Elles justifient une vigilance renforcée et une documentation approfondie."},
+    {n:15,q:"L'obligation d'identifier le bénéficiaire effectif s'applique aux trusts gérés à Monaco.",a:"Vrai"},
+    {n:16,q:"Un nominee director peut légalement représenter une société sans en être le contrôleur effectif.",a:"Vrai"},
+    {n:17,q:"L'utilisation d'actions au porteur est un facteur de risque en matière de transparence du bénéficiaire effectif.",a:"Vrai"},
+    {n:18,q:"Une société civile immobilière (SCI) est toujours transparente fiscalement en France.",a:"Faux",e:"La SCI est en principe soumise à l'IR (transparence fiscale) mais peut opter pour l'IS. Cette option modifie significativement le traitement fiscal et patrimonial. La transparence fiscale n'est donc pas automatique et définitive."},
+    {n:19,q:"Le recours à un prête-nom pour dissimuler le véritable propriétaire d'actifs est une technique de blanchiment.",a:"Vrai"},
+    {n:20,q:"Les structures patrimoniales offshore sont toujours constituées dans un but frauduleux.",a:"Faux",e:"Des raisons légitimes existent : planification successorale internationale, protection d'actifs légale, diversification de juridictions. L'opacité ou l'absence de justification économique sont des facteurs de risque, mais l'offshore n'est pas frauduleux en soi."},
+  ]},
+  {title:"Partie 20 — Blanchiment par l'immobilier de luxe (typologies)",items:[
+    {n:21,q:"L'immobilier est l'un des secteurs les plus exposés au blanchiment de capitaux selon le GAFI.",a:"Vrai"},
+    {n:22,q:"La surévaluation du prix d'un bien immobilier est une technique courante de blanchiment.",a:"Vrai"},
+    {n:23,q:"L'achat d'un bien immobilier en espèces élimine tout risque de traçabilité des fonds.",a:"Faux",e:"Les plafonds légaux sur les paiements en espèces et les obligations déclaratives notariales rendent ce type de paiement pratiquement impossible sans déclencher des alertes. Les registres de propriété et actes notariés conservent une traçabilité."},
+    {n:24,q:"L'utilisation d'une société holding pour acquérir un bien immobilier est systématiquement suspecte.",a:"Faux",e:"L'acquisition via holding répond souvent à des motifs légitimes (transmission patrimoniale, optimisation fiscale). C'est l'opacité de la structure et l'impossibilité d'identifier le bénéficiaire effectif qui constituent des signaux d'alerte."},
+    {n:25,q:"La technique du 'back-to-back loan' peut être utilisée pour blanchir des capitaux via l'immobilier.",a:"Vrai"},
+    {n:26,q:"Monaco est particulièrement exposé au blanchiment immobilier en raison de la valeur élevée des biens.",a:"Vrai"},
+    {n:27,q:"Les travaux de rénovation d'un bien peuvent être utilisés pour injecter des fonds illicites.",a:"Vrai"},
+    {n:28,q:"Un bien immobilier acheté à un prix inférieur au marché est toujours un signe de bonne affaire légitime.",a:"Faux",e:"Un prix anormalement bas peut indiquer une transaction fictive, une minoration délibérée pour blanchiment ou un paiement partiel non déclaré (dessous-de-table). C'est un signal d'alerte justifiant des diligences renforcées."},
+    {n:29,q:"La location courte durée d'un bien de luxe peut être utilisée pour blanchir des revenus.",a:"Vrai"},
+    {n:30,q:"L'agent immobilier n'a aucune obligation de vérifier l'origine des fonds de son client acheteur.",a:"Faux",e:"L'agent immobilier est une profession assujettie aux obligations LCB/FT à Monaco. Il est tenu de vérifier l'identité de ses clients, d'obtenir des informations sur l'origine des fonds et de signaler tout soupçon à SICCFIN."},
+    {n:31,q:"La technique du 'layering' peut impliquer des achats et reventes successifs de biens immobiliers.",a:"Vrai"},
+    {n:32,q:"Un client qui paie une commission majorée sans justification est un indicateur de risque.",a:"Vrai"},
+    {n:33,q:"Les marchés immobiliers de luxe comme Monaco sont moins exposés au blanchiment car les acheteurs sont plus contrôlés.",a:"Faux",e:"Les marchés de luxe sont au contraire particulièrement attractifs pour le blanchiment : les montants très élevés permettent de recycler de grandes sommes en une seule transaction. La valeur élevée des biens amplifie le risque."},
+    {n:34,q:"L'interposition de plusieurs sociétés dans une chaîne d'acquisition immobilière peut masquer le bénéficiaire effectif.",a:"Vrai"},
+    {n:35,q:"Le notaire n'a aucun rôle dans la détection du blanchiment immobilier.",a:"Faux",e:"Le notaire est un acteur clé. Il est assujetti aux obligations LCB/FT, doit vérifier l'identité des parties et l'origine des fonds, et est tenu de déposer une DS en cas de soupçon. Son intervention dans l'acte de vente en fait un filtre essentiel."},
+    {n:36,q:"Un acheteur absent lors de la transaction immobilière est un signal d'alerte.",a:"Vrai"},
+    {n:37,q:"Les fonds provenant d'un pays sous sanctions peuvent être légitimement utilisés pour acquérir un bien immobilier à Monaco.",a:"Faux",e:"L'utilisation de fonds provenant d'un pays sous sanctions est prohibée. L'entité assujettie doit vérifier l'origine géographique des fonds et refuser toute transaction impliquant des pays ou personnes sanctionnés."},
+    {n:38,q:"La dissimulation de l'identité de l'acheteur réel via un prête-nom est une technique fréquente dans l'immobilier de luxe.",a:"Vrai"},
+    {n:39,q:"La revente rapide d'un bien immobilier à un prix similaire au prix d'achat peut être un indicateur de blanchiment.",a:"Vrai"},
+    {n:40,q:"Les promoteurs immobiliers sont exemptés des obligations LCB/FT dans le secteur de la construction neuve.",a:"Faux",e:"Les promoteurs immobiliers qui vendent des biens peuvent être assujettis aux obligations LCB/FT. À Monaco, le cadre LCB/FT couvre les transactions immobilières indépendamment du fait que le bien soit neuf ou ancien."},
+  ]},
+  {title:"Partie 21 — Obligations de reporting & supervision AMSF Monaco",items:[
+    {n:41,q:"L'AMSF est l'autorité de supervision LCB/FT des professions financières à Monaco.",a:"Vrai"},
+    {n:42,q:"SICCFIN est placé sous l'autorité du Ministre d'État de la Principauté de Monaco.",a:"Vrai"},
+    {n:43,q:"L'AMSF peut prononcer des sanctions administratives en cas de manquements LCB/FT.",a:"Vrai"},
+    {n:44,q:"Les entités assujetties peuvent refuser un contrôle de l'AMSF sans justification.",a:"Faux",e:"Les entités assujetties ont l'obligation de se soumettre aux contrôles de l'AMSF, de fournir les documents demandés dans les délais impartis et de coopérer pleinement. Le refus de coopérer constitue un manquement grave pouvant entraîner des sanctions renforcées."},
+    {n:45,q:"L'AMSF publie des lignes directrices sectorielles pour aider les entités à appliquer les obligations LCB/FT.",a:"Vrai"},
+    {n:46,q:"Le rapport annuel de contrôle interne LCB/FT doit être transmis systématiquement à l'AMSF.",a:"Faux",e:"Le rapport de contrôle interne est établi et conservé par l'entité, mais n'est pas nécessairement transmis spontanément chaque année. Il doit être disponible et produit sur demande lors d'un contrôle."},
+    {n:47,q:"Une entité assujettie peut faire l'objet d'un contrôle sur place et d'un contrôle sur pièces par l'AMSF.",a:"Vrai"},
+    {n:48,q:"Les sanctions prononcées par l'AMSF peuvent inclure le retrait d'agrément.",a:"Vrai"},
+    {n:49,q:"SICCFIN est compétent pour analyser les déclarations de soupçon et les transmettre aux autorités judiciaires.",a:"Vrai"},
+    {n:50,q:"L'obligation de nommer un responsable LCB/FT s'applique à toutes les entités assujetties sans exception.",a:"Faux",e:"L'obligation de désigner un responsable LCB/FT dédié s'applique aux entités d'une certaine taille ou complexité. Les très petites structures peuvent assumer elles-mêmes cette fonction sans désignation formelle d'un responsable distinct."},
+    {n:51,q:"L'AMSF peut coopérer avec des autorités de supervision étrangères dans le cadre d'enquêtes LCB/FT.",a:"Vrai"},
+    {n:52,q:"Les manquements LCB/FT peuvent engager la responsabilité pénale personnelle des dirigeants.",a:"Vrai"},
+    {n:53,q:"Un plan de remédiation proposé par une entité après un contrôle AMSF éteint automatiquement toute sanction.",a:"Faux",e:"Un plan de remédiation peut être pris en compte favorablement mais n'éteint pas automatiquement la responsabilité ni les sanctions. L'AMSF apprécie souverainement la gravité des manquements et les mesures correctives."},
+    {n:54,q:"Les statistiques de DS déposées par les entités assujetties font partie des informations remontées à SICCFIN.",a:"Vrai"},
+    {n:55,q:"Monaco est soumis aux évaluations mutuelles du MONEYVAL uniquement en tant qu'observateur.",a:"Faux",e:"Monaco est membre à part entière du MONEYVAL et fait l'objet d'évaluations mutuelles complètes selon la méthodologie GAFI. La 5e évaluation a été réalisée et Monaco fait l'objet d'un suivi régulier."},
+    {n:56,q:"L'obligation de formation LCB/FT du personnel doit être documentée et ses résultats tracés.",a:"Vrai"},
+    {n:57,q:"Une entité dont le responsable LCB/FT quitte ses fonctions peut rester sans responsable désigné indéfiniment.",a:"Faux",e:"Un remplacement doit être désigné dans les meilleurs délais. L'absence prolongée de responsable LCB/FT est un manquement réglementaire. L'entité doit informer son autorité de supervision de tout changement dans cette fonction."},
+    {n:58,q:"L'AMSF peut imposer des mesures conservatoires immédiates en cas de risque grave.",a:"Vrai"},
+    {n:59,q:"Les petites entités assujetties bénéficient d'une supervision allégée excluant tout contrôle sur place.",a:"Faux",e:"La taille peut influencer la fréquence ou la modalité des contrôles, mais les petites entités ne sont pas exclues des contrôles sur place. L'AMSF peut décider d'effectuer un contrôle sur place dans toute entité assujettie."},
+    {n:60,q:"Les informations transmises à SICCFIN dans le cadre d'une DS sont couvertes par le secret professionnel de l'entité.",a:"Faux",e:"La DS lève précisément l'obligation de secret professionnel pour les informations transmises à SICCFIN. C'est l'une des protections fondamentales : le professionnel ne peut pas être poursuivi pour violation du secret professionnel du fait de sa DS de bonne foi."},
+  ]},
+]},
+{id:"s7",label:"Série 7",desc:"Correspondant banking & relations interbancaires · Structures patrimoniales avancé · Typologies avancées",parts:[
+  {title:"Partie 22 — Correspondant banking & relations interbancaires",items:[
+    {n:1,q:"Le correspondant banking désigne la relation par laquelle une banque fournit des services à une autre banque.",a:"Vrai"},
+    {n:2,q:"La banque correspondante assume une responsabilité LCB/FT équivalente à celle de la banque répondante.",a:"Faux",e:"La banque correspondante ne peut pas contrôler directement les clients de la répondante. La Rec. 13 du GAFI établit une répartition claire : la répondante est responsable de la diligence sur ses propres clients, la correspondante doit évaluer la qualité du dispositif LCB/FT de la répondante."},
+    {n:3,q:"Les banques fictives (shell banks) sont des institutions dépourvues de présence physique réelle dans leur juridiction.",a:"Vrai"},
+    {n:4,q:"L'établissement de relations de correspondance avec des banques fictives est interdit selon les normes GAFI.",a:"Vrai"},
+    {n:5,q:"La banque correspondante peut se fier entièrement aux diligences KYC de la banque répondante sur ses clients.",a:"Faux",e:"La correspondante ne peut pas s'appuyer aveuglément sur les diligences de la répondante. Elle doit évaluer son dispositif LCB/FT global, collecter des informations suffisantes et obtenir l'approbation de la direction avant d'établir la relation."},
+    {n:6,q:"Le risque de correspondant banking est particulièrement élevé avec des banques situées dans des juridictions à haut risque.",a:"Vrai"},
+    {n:7,q:"La 'de-risking' désigne la tendance des grandes banques à clôturer des relations avec des contreparties à risque élevé.",a:"Vrai"},
+    {n:8,q:"Les virements en transit (pass-through transactions) via des comptes de correspondance sont exemptés d'analyse LCB/FT.",a:"Faux",e:"Les virements en transit sont au contraire soumis à une surveillance particulière. L'opacité sur les donneurs d'ordre et bénéficiaires finaux est un facteur de risque majeur. La Travel Rule exige que les informations sur le donneur d'ordre accompagnent la chaîne de paiement."},
+    {n:9,q:"Un compte de passage (payable-through account) permet aux clients de la banque répondante d'accéder directement aux services de la banque correspondante.",a:"Vrai"},
+    {n:10,q:"Les comptes de passage présentent un risque LCB/FT plus élevé que les comptes de correspondance standards.",a:"Vrai"},
+    {n:11,q:"La Recommandation 13 du GAFI traite spécifiquement des relations de correspondance bancaire.",a:"Vrai"},
+    {n:12,q:"Une banque correspondante peut accepter une banque répondante sans avoir évalué son dispositif LCB/FT.",a:"Faux",e:"Avant d'établir une relation de correspondance, la correspondante doit évaluer le dispositif LCB/FT de la répondante, collecter des informations suffisantes, obtenir l'approbation de la direction et formaliser les responsabilités respectives."},
+    {n:13,q:"La Travel Rule impose que les informations sur le donneur d'ordre accompagnent les virements électroniques.",a:"Vrai"},
+    {n:14,q:"La concentration des flux de paiements internationaux sur quelques banques correspondantes augmente le risque systémique LCB/FT.",a:"Vrai"},
+    {n:15,q:"Une banque répondante est toujours responsable de la qualité LCB/FT de ses propres clients dans le cadre d'une relation de correspondance.",a:"Vrai"},
+  ]},
+  {title:"Partie 23 — Trusts & structures patrimoniales (avancé)",items:[
+    {n:16,q:"Un trust express est constitué délibérément par un settlor, à la différence d'un trust implicite.",a:"Vrai"},
+    {n:17,q:"La loi applicable à un trust est toujours celle du pays de résidence du settlor.",a:"Faux",e:"La loi applicable est déterminée par les règles de conflit de lois. Dans la plupart des cas, le settlor peut choisir la loi régissant le trust (choix exprès), sous réserve des règles d'ordre public. La résidence du settlor n'est qu'un facteur parmi d'autres."},
+    {n:18,q:"Le 'letter of wishes' est un document juridiquement contraignant pour le trustee.",a:"Faux",e:"La lettre de souhaits est un document non contraignant dans lequel le settlor exprime ses préférences. Le trustee en tient compte à titre indicatif mais n'est pas légalement obligé de la suivre. Son existence peut révéler le contrôle effectif exercé par le settlor."},
+    {n:19,q:"Un trust révocable permet au settlor de récupérer les actifs à tout moment.",a:"Vrai"},
+    {n:20,q:"Dans un trust irrévocable, le settlor ne peut jamais exercer d'influence sur la gestion des actifs.",a:"Faux",e:"Même dans un trust irrévocable, le settlor peut conserver des pouvoirs réservés (changer de trustee, modifier les bénéficiaires, intervenir dans certaines décisions). L'irrévocabilité formelle n'exclut pas le contrôle factuel."},
+    {n:21,q:"La Convention de La Haye de 1985 régit la loi applicable aux trusts.",a:"Vrai"},
+    {n:22,q:"Un trust à durée illimitée est autorisé dans toutes les juridictions.",a:"Faux",e:"La durée des trusts est encadrée par la règle contre les perpétuités dans de nombreuses juridictions de common law. D'autres juridictions ont aboli cette règle pour permettre les trusts perpétuels. La durée maximale varie selon la juridiction."},
+    {n:23,q:"L'identification du bénéficiaire effectif d'un trust nécessite d'examiner les couches successives de contrôle.",a:"Vrai"},
+    {n:24,q:"Une fondation privée de droit liechtensteinois peut fonctionner de manière similaire à un trust.",a:"Vrai"},
+    {n:25,q:"Le recours à des trustees professionnels réglementés élimine tout risque LCB/FT lié au trust.",a:"Faux",e:"L'utilisation d'un trustee professionnel réduit certains risques mais ne les élimine pas. Le trustee peut être instrumentalisé sans le savoir. Des diligences renforcées restent nécessaires sur la source de richesse et la légitimité des actifs transférés."},
+    {n:26,q:"Une société de gestion de fortune (family office) peut administrer des trusts pour le compte de clients.",a:"Vrai"},
+    {n:27,q:"L'identification du settlor d'un trust est toujours requise même s'il n'est plus vivant.",a:"Faux",e:"Si le settlor est décédé, l'identification porte principalement sur les personnes exerçant le contrôle effectif (trustee, protector) et sur les bénéficiaires. L'identité du settlor décédé reste un élément de contexte mais l'obligation porte sur les personnes vivantes en contrôle."},
+    {n:28,q:"Un trust peut être utilisé comme véhicule de financement du terrorisme.",a:"Vrai"},
+    {n:29,q:"Les obligations LCB/FT s'appliquent aux administrateurs de trusts domiciliés à Monaco.",a:"Vrai"},
+    {n:30,q:"La structure 'trust dans trust' (sub-trust) est automatiquement frauduleuse.",a:"Faux",e:"Une structure trust dans trust peut avoir des justifications légitimes (séparation d'actifs, gestion de branches familiales différentes). C'est l'impossibilité d'identifier le bénéficiaire effectif final ou l'absence de justification économique qui constituent des signaux d'alerte."},
+  ]},
+  {title:"Partie 24 — Typologies avancées de blanchiment immobilier",items:[
+    {n:31,q:"Le 'smurfing' immobilier consiste à fractionner l'achat d'un bien en plusieurs paiements inférieurs aux seuils déclaratifs.",a:"Vrai"},
+    {n:32,q:"La technique de la 'double facturation' peut être utilisée dans les transactions immobilières transfrontalières.",a:"Vrai"},
+    {n:33,q:"Un bien immobilier utilisé comme garantie d'un prêt bancaire ne peut pas être impliqué dans un schéma de blanchiment.",a:"Faux",e:"Un bien surévalué peut servir de garantie pour obtenir un prêt supérieur à sa valeur réelle, permettant d'injecter des fonds illicites sous forme de 'remboursements' fictifs. La surévaluation immobilière à des fins de garantie est une technique de blanchiment connue."},
+    {n:34,q:"L'achat d'un bien immobilier via un crédit-bail (leasing immobilier) peut masquer l'origine des fonds.",a:"Vrai"},
+    {n:35,q:"Les enchères immobilières peuvent être utilisées pour manipuler les prix et blanchir des capitaux.",a:"Vrai"},
+    {n:36,q:"Une donation de bien immobilier entre membres d'une même famille ne peut pas constituer un acte de blanchiment.",a:"Faux",e:"Une donation familiale peut être utilisée pour transférer un bien d'origine illicite à un tiers de confiance. Le lien familial ne neutralise pas le risque de blanchiment. L'origine du bien transmis doit être vérifiée indépendamment du lien entre les parties."},
+    {n:37,q:"L'identification de l'origine des fonds est plus difficile lorsque l'acheteur utilise plusieurs comptes dans différents pays.",a:"Vrai"},
+    {n:38,q:"La technique du 'cash collateral' consiste à déposer des espèces en garantie d'un prêt pour un achat immobilier.",a:"Vrai"},
+    {n:39,q:"Un bien immobilier de luxe acheté et jamais occupé ni loué peut être un indicateur de blanchiment.",a:"Vrai"},
+    {n:40,q:"Les professionnels de la gestion de fortune ne sont jamais impliqués dans des schémas de blanchiment immobilier.",a:"Faux",e:"Les gestionnaires de fortune peuvent être instrumentalisés dans des schémas de blanchiment immobilier, notamment lorsqu'ils conseillent l'acquisition de biens via des structures opaques. Leur position centrale en fait des acteurs exposés et assujettis aux obligations LCB/FT."},
+  ]},
+]},
+{id:"s8",label:"Série 8",desc:"Supervision AMSF avancée · Correspondant banking avancé · Consolidation générale",parts:[
+  {title:"Partie 25 — Supervision AMSF & reporting avancé",items:[
+    {n:1,q:"L'AMSF peut déléguer certaines de ses missions de supervision à des organismes professionnels.",a:"Vrai"},
+    {n:2,q:"Une entité assujettie peut contester une décision de sanction de l'AMSF devant les juridictions compétentes.",a:"Vrai"},
+    {n:3,q:"Le secret professionnel de l'entité assujettie peut être opposé à l'AMSF lors d'un contrôle.",a:"Faux",e:"Le secret professionnel ne peut pas être opposé aux autorités de supervision dans le cadre de leurs missions légales de contrôle LCB/FT. Les inspecteurs de l'AMSF disposent d'un droit d'accès à tous les documents nécessaires à leur mission."},
+    {n:4,q:"L'AMSF évalue la proportionnalité des mesures LCB/FT mises en place par les entités qu'elle supervise.",a:"Vrai"},
+    {n:5,q:"Une entité nouvellement agréée bénéficie d'un délai de grâce pendant lequel aucune obligation LCB/FT ne s'applique.",a:"Faux",e:"Les obligations LCB/FT s'appliquent dès l'obtention de l'agrément, sans délai de grâce. Une entité nouvellement agréée doit avoir mis en place son dispositif avant de commencer à exercer. L'AMSF peut contrôler le dispositif dès les premiers mois."},
+    {n:6,q:"L'AMSF peut imposer des mesures d'urgence sans procédure contradictoire préalable en cas de risque grave.",a:"Vrai"},
+    {n:7,q:"Les dirigeants d'une entité assujettie peuvent être personnellement sanctionnés par l'AMSF.",a:"Vrai"},
+    {n:8,q:"Un contrôle AMSF favorable dispense l'entité de toute mise à jour de son dispositif LCB/FT pendant 3 ans.",a:"Faux",e:"Un contrôle favorable ne dispense pas de la mise à jour continue. Les risques évoluent et les obligations réglementaires changent. L'entité doit maintenir et améliorer en permanence son dispositif, indépendamment des résultats du dernier contrôle."},
+    {n:9,q:"L'AMSF publie des typologies et des études de cas pour aider les entités assujetties à améliorer leur dispositif.",a:"Vrai"},
+    {n:10,q:"Les échanges d'informations entre l'AMSF et SICCFIN sont interdits pour protéger le secret des affaires.",a:"Faux",e:"L'AMSF et SICCFIN coopèrent dans le cadre de leurs missions respectives. Les échanges d'informations entre autorités monégasques dans le cadre de la lutte contre le blanchiment sont non seulement autorisés mais nécessaires à l'efficacité du dispositif."},
+    {n:11,q:"L'obligation de désigner un correspondant LCB/FT au sein d'un groupe international peut incomber à la filiale monégasque.",a:"Vrai"},
+    {n:12,q:"L'AMSF peut exiger la mise en place de contrôles supplémentaires si elle estime le dispositif insuffisant.",a:"Vrai"},
+    {n:13,q:"Les sanctions pécuniaires prononcées par l'AMSF sont plafonnées et ne peuvent jamais dépasser un montant fixe.",a:"Faux",e:"Les sanctions pécuniaires peuvent être significatives et dépasser des plafonds nominaux dans certains cas graves, notamment lorsque les manquements sont répétés ou intentionnels. Elles peuvent également tenir compte des bénéfices tirés du manquement."},
+    {n:14,q:"Une entité assujettie doit informer l'AMSF de tout changement significatif dans son actionnariat ou sa gouvernance.",a:"Vrai"},
+    {n:15,q:"Le rapport d'évaluation nationale des risques (ENR) de Monaco est utilisé par les entités pour calibrer leur APR.",a:"Vrai"},
+  ]},
+  {title:"Partie 26 — Correspondant banking & relations interbancaires (avancé)",items:[
+    {n:16,q:"La Travel Rule du GAFI s'applique aux transferts de crypto-actifs depuis la révision de la Recommandation 15.",a:"Vrai"},
+    {n:17,q:"Un établissement de paiement peut établir des relations de correspondance avec d'autres établissements.",a:"Vrai"},
+    {n:18,q:"La vérification de l'absence d'une banque répondante sur les listes de sanctions est une diligence préalable obligatoire.",a:"Vrai"},
+    {n:19,q:"Le 'nesting' désigne la pratique par laquelle une banque accède aux réseaux de paiement d'une autre via une relation de correspondance.",a:"Vrai"},
+    {n:20,q:"Le nesting est toujours une pratique légale et transparente.",a:"Faux",e:"Le nesting peut être utilisé de manière abusive pour accéder aux réseaux de paiements sans être directement identifié par la banque correspondante. Une banque répondante peut ainsi 'abriter' des institutions tierces sans que la correspondante en soit informée, créant un risque LCB/FT significatif."},
+    {n:21,q:"Une banque correspondante doit refuser d'établir une relation avec une banque répondante si elle ne peut pas évaluer son dispositif LCB/FT.",a:"Vrai"},
+    {n:22,q:"Les banques centrales ne peuvent pas être impliquées dans des relations de correspondance bancaire.",a:"Faux",e:"Les banques centrales peuvent avoir des relations de correspondance avec d'autres banques centrales ou institutions financières. Les risques LCB/FT associés sont généralement faibles compte tenu du statut souverain des contreparties."},
+    {n:23,q:"La fréquence et le volume inhabituels de virements via un compte de correspondance sont des indicateurs d'alerte.",a:"Vrai"},
+    {n:24,q:"Une banque peut maintenir une relation de correspondance avec une institution sans avoir obtenu des informations suffisantes sur son actionnariat.",a:"Faux",e:"L'identification de l'actionnariat et de la gouvernance de la banque répondante fait partie des diligences obligatoires. L'absence de ces informations doit conduire au refus de la relation."},
+    {n:25,q:"Les messageries de paiement cryptées peuvent compliquer la mise en œuvre de la Travel Rule.",a:"Vrai"},
+    {n:26,q:"Une banque correspondante peut clôturer une relation de correspondance si elle suspecte des flux illicites.",a:"Vrai"},
+    {n:27,q:"La surveillance des virements en transit ne nécessite pas d'analyse des contreparties finales.",a:"Faux",e:"La surveillance des virements en transit doit inclure une analyse des contreparties finales (donneurs d'ordre et bénéficiaires ultimement concernés). L'opacité sur l'identité des parties finales est précisément le risque principal du correspondant banking."},
+    {n:28,q:"Les établissements de monnaie électronique peuvent présenter des risques similaires au correspondant banking.",a:"Vrai"},
+    {n:29,q:"Une banque peut accepter des fonds de clients d'une banque répondante sans que ces clients soient connus de la banque correspondante.",a:"Vrai"},
+    {n:30,q:"L'évaluation du risque d'une relation de correspondance est un exercice ponctuel réalisé à l'entrée en relation uniquement.",a:"Faux",e:"L'évaluation est un processus continu. Les relations doivent être réévaluées périodiquement et lors de tout événement significatif (changement de propriétaire de la répondante, évolution du cadre réglementaire, signaux d'alerte dans les flux)."},
+  ]},
+  {title:"Partie 27 — Consolidation générale",items:[
+    {n:31,q:"Un trust domicilié dans une juridiction à haut risque GAFI requiert une vigilance renforcée.",a:"Vrai"},
+    {n:32,q:"L'utilisation combinée d'un trust et d'une société offshore pour acquérir un bien immobilier de luxe est un signal d'alerte majeur.",a:"Vrai"},
+    {n:33,q:"La valeur d'un bien immobilier à Monaco peut dépasser plusieurs dizaines de millions d'euros, amplifiant le risque LCB/FT.",a:"Vrai"},
+    {n:34,q:"Un professionnel LCB/FT peut ignorer une transaction suspecte si elle implique un client de longue date.",a:"Faux",e:"La durée de la relation ne constitue pas une exemption. Un comportement inhabituel d'un client établi peut être d'autant plus significatif qu'il dévie d'un profil connu. Les clients établis peuvent être utilisés pour dissimuler des opérations en exploitant la confiance accumulée."},
+    {n:35,q:"Les flux financiers entre une banque correspondante et une banque fictive constituent une violation grave des normes GAFI.",a:"Vrai"},
+    {n:36,q:"La mise en place d'une structure trust + holding + compte de correspondance est automatiquement illégale.",a:"Faux",e:"Une telle structure peut avoir des justifications légitimes (gestion patrimoniale internationale, planification successorale, activité commerciale transfrontalière). C'est l'opacité, l'absence de justification économique et l'impossibilité d'identifier le bénéficiaire effectif qui constituent les facteurs d'alerte."},
+    {n:37,q:"L'AMSF peut partager des informations sur les entités supervisées avec le MONEYVAL dans le cadre d'une évaluation.",a:"Vrai"},
+    {n:38,q:"Un trustee professionnel peut être contraint de déposer une DS si les actifs du trust sont d'origine suspecte.",a:"Vrai"},
+    {n:39,q:"La supervision AMSF couvre l'ensemble des professions assujetties à Monaco sans exception.",a:"Vrai"},
+    {n:40,q:"Les virements effectués par une banque répondante en faveur de ses clients passent automatiquement les filtres de sanctions de la banque correspondante.",a:"Faux",e:"La banque correspondante ne filtre pas automatiquement tous les clients finaux de la répondante. C'est précisément le risque du correspondant banking : la correspondante n'a pas de visibilité directe sur les clients de la répondante."},
+    {n:41,q:"Une DS peut être déposée par un trustee professionnel sans violer ses obligations envers le trust.",a:"Vrai"},
+    {n:42,q:"Un agent immobilier peut être tenu responsable d'une transaction de blanchiment s'il a omis ses diligences.",a:"Vrai"},
+    {n:43,q:"La complexité d'une structure patrimoniale ne justifie pas à elle seule le refus de la relation.",a:"Vrai"},
+    {n:44,q:"Une banque correspondante peut maintenir une relation avec une banque répondante dont le responsable compliance vient d'être révoqué sans investigation.",a:"Faux",e:"La révocation du responsable compliance d'une banque répondante est un événement significatif qui doit déclencher une réévaluation. Ce signal peut indiquer des dysfonctionnements internes graves et doit faire l'objet d'une analyse avant de décider du maintien de la relation."},
+    {n:45,q:"L'immobilier de luxe à Monaco fait partie des secteurs identifiés à risque élevé dans l'ENR monégasque.",a:"Vrai"},
+    {n:46,q:"Les dispositions anti-blanchiment s'appliquent aux transactions immobilières même si elles impliquent des résidents monégasques.",a:"Vrai"},
+    {n:47,q:"Un trust irrévocable dans lequel le settlor est également bénéficiaire principal ne présente aucun risque LCB/FT particulier.",a:"Faux",e:"Lorsque le settlor est aussi bénéficiaire principal, il conserve un intérêt économique direct dans les actifs, ce qui peut indiquer que le trust n'est qu'une façade. Cette configuration est un signal d'alerte justifiant une analyse approfondie du contrôle effectif exercé."},
+    {n:48,q:"SICCFIN peut ordonner la suspension temporaire d'une transaction suspecte.",a:"Vrai"},
+    {n:49,q:"Une entité assujettie qui a déposé une DS peut librement exécuter la transaction concernée.",a:"Faux",e:"Le dépôt d'une DS ne donne pas automatiquement le feu vert pour exécuter la transaction. L'entité peut être tenue de s'abstenir pendant un délai permettant à SICCFIN de prendre les mesures nécessaires."},
+    {n:50,q:"Les obligations LCB/FT des administrateurs de trusts à Monaco incluent la conservation des documents pendant 5 ans.",a:"Vrai"},
+    {n:51,q:"Un correspondant banking établi avant l'entrée en vigueur des normes actuelles est dispensé de réévaluation.",a:"Faux",e:"Les relations préexistantes doivent être réévaluées selon les normes actuelles. L'ancienneté d'une relation ne constitue pas une exemption. Les entités doivent mettre à jour leurs diligences sur les relations existantes lors de l'entrée en vigueur de nouvelles normes."},
+    {n:52,q:"La transparence sur le bénéficiaire effectif est une condition préalable à l'entrée en relation avec tout type de structure.",a:"Vrai"},
+    {n:53,q:"Un agent immobilier peut déléguer ses obligations LCB/FT à son client vendeur.",a:"Faux",e:"L'agent immobilier ne peut pas déléguer ses propres obligations LCB/FT à ses clients. Les obligations sont personnelles à l'entité assujettie. Le client peut fournir des informations, mais la responsabilité des diligences reste intégralement avec l'agent."},
+    {n:54,q:"Les crypto-actifs peuvent être utilisés pour acquérir des biens immobiliers, créant un risque LCB/FT hybride.",a:"Vrai"},
+    {n:55,q:"Un bien immobilier acquis par un trust dont le bénéficiaire effectif est inconnu peut faire l'objet d'une DS.",a:"Vrai"},
+    {n:56,q:"L'obligation de vigilance s'éteint une fois l'acte notarié signé.",a:"Faux",e:"L'obligation de vigilance ne s'éteint pas à la signature de l'acte. Pour les professionnels ayant une relation continue (gestionnaire de patrimoine, administrateur de trust), la surveillance doit se poursuivre. Des transactions ultérieures liées au même bien peuvent nécessiter de nouvelles diligences."},
+    {n:57,q:"Les relations de correspondance avec des institutions financières non régulées présentent un risque LCB/FT élevé.",a:"Vrai"},
+    {n:58,q:"La Principauté de Monaco a renforcé son dispositif LCB/FT suite aux recommandations du MONEYVAL.",a:"Vrai"},
+    {n:59,q:"Un professionnel LCB/FT peut ignorer les lignes directrices publiées par l'AMSF si elles ne sont pas des textes de loi.",a:"Faux",e:"Les lignes directrices de l'AMSF, bien que n'ayant pas force de loi formelle, constituent des interprétations faisant autorité. Les ignorer expose l'entité à des sanctions en cas de contrôle. L'AMSF se fonde sur elles pour apprécier la conformité des dispositifs."},
+    {n:60,q:"La lutte contre le blanchiment via l'immobilier de luxe nécessite une coopération entre agents immobiliers, notaires, avocats et banques.",a:"Vrai"},
+  ]},
+]},
+];
+
+const state = {};
+function key(si,pi,n){return `${si}_${pi}_${n}`;}
+function globalStats(){
+  let answered=0,correct=0;
+  SERIES.forEach((s,si)=>s.parts.forEach((p,pi)=>p.items.forEach(item=>{
+    const k=key(si,pi,item.n);
+    if(state[k]){answered++;if(state[k]===item.a)correct++;}
+  })));
+  return{answered,correct,wrong:answered-correct};
+}
+function serieStats(si){
+  let total=0,answered=0,correct=0;
+  SERIES[si].parts.forEach((p,pi)=>p.items.forEach(item=>{
+    total++;const k=key(si,pi,item.n);
+    if(state[k]){answered++;if(state[k]===item.a)correct++;}
+  }));
+  return{total,answered,correct,wrong:answered-correct};
+}
+function buildNav(){
+  const nav=document.getElementById('nav-tabs');
+  SERIES.forEach((s,si)=>{
+    const btn=document.createElement('button');
+    btn.className='tab-btn'+(si===0?' active':'');
+    btn.textContent=s.label;btn.dataset.si=si;
+    btn.onclick=()=>switchTab(si);nav.appendChild(btn);
+  });
+}
+function buildContent(){
+  const main=document.getElementById('main-content');
+  SERIES.forEach((s,si)=>{
+    const panel=document.createElement('div');
+    panel.className='serie-panel'+(si===0?' active':'');panel.id='panel-'+si;
+    const hdr=document.createElement('div');hdr.className='serie-header';
+    hdr.innerHTML=`<h2>${s.label}</h2><p>${s.desc}</p><div class="serie-stats" id="stats-${si}"></div>`;
+    panel.appendChild(hdr);
+    s.parts.forEach((p,pi)=>{
+      const ptDiv=document.createElement('div');ptDiv.className='part-title';ptDiv.textContent=p.title;panel.appendChild(ptDiv);
+      p.items.forEach(item=>{
+        const card=document.createElement('div');card.className='q-card';card.id=`card-${si}-${pi}-${item.n}`;
+        const inner=document.createElement('div');inner.className='q-inner';
+        inner.innerHTML=`<span class="q-num">${item.n}</span><span class="q-text">${item.q}</span>
+          <div class="q-actions">
+            <button class="btn-vf" id="vbtn-${si}-${pi}-${item.n}" onclick="answer(${si},${pi},${item.n},'Vrai')">Vrai</button>
+            <button class="btn-vf" id="fbtn-${si}-${pi}-${item.n}" onclick="answer(${si},${pi},${item.n},'Faux')">Faux</button>
+          </div>
+          <span class="result-badge" id="rbadge-${si}-${pi}-${item.n}"></span>`;
+        card.appendChild(inner);
+        if(item.e){
+          const expl=document.createElement('div');expl.className='q-expl';expl.id=`expl-${si}-${pi}-${item.n}`;
+          expl.innerHTML=`<strong>Explication&nbsp;:</strong> ${item.e}`;card.appendChild(expl);
+        }
+        panel.appendChild(card);
+      });
+    });
+    const rb=document.createElement('div');rb.className='reset-bar';
+    rb.innerHTML=`<button class="btn-reset" onclick="resetSerie(${si})">Recommencer cette série</button><div class="final-score" id="fscore-${si}"></div>`;
+    panel.appendChild(rb);main.appendChild(panel);
+  });
+}
+function switchTab(si){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===si));
+  document.querySelectorAll('.serie-panel').forEach((p,i)=>p.classList.toggle('active',i===si));
+}
+function answer(si,pi,n,choice){
+  const k=key(si,pi,n);if(state[k])return;state[k]=choice;refreshCard(si,pi,n);refreshSerieStats(si);refreshGlobal();
+}
+function refreshCard(si,pi,n){
+  const p=SERIES[si].parts[pi];const item=p.items.find(i=>i.n===n);const k=key(si,pi,n);const chosen=state[k];
+  const card=document.getElementById(`card-${si}-${pi}-${n}`);
+  const vBtn=document.getElementById(`vbtn-${si}-${pi}-${n}`);
+  const fBtn=document.getElementById(`fbtn-${si}-${pi}-${n}`);
+  const badge=document.getElementById(`rbadge-${si}-${pi}-${n}`);
+  if(!chosen){card.className='q-card';vBtn.className='btn-vf';vBtn.disabled=false;fBtn.className='btn-vf';fBtn.disabled=false;badge.textContent='';badge.className='result-badge';return;}
+  const isCorrect=chosen===item.a;
+  card.className='q-card '+(isCorrect?'answered-correct':'answered-wrong');
+  vBtn.disabled=true;fBtn.disabled=true;
+  if(chosen==='Vrai'){vBtn.className='btn-vf '+(isCorrect?'correct':'wrong');if(!isCorrect)fBtn.className='btn-vf reveal';}
+  else{fBtn.className='btn-vf '+(isCorrect?'correct':'wrong');if(!isCorrect)vBtn.className='btn-vf reveal';}
+  badge.textContent=isCorrect?'✓ Correct':'✗ Incorrect';badge.className='result-badge '+(isCorrect?'ok':'ko');
+}
+function refreshSerieStats(si){
+  const st=serieStats(si);
+  document.getElementById(`stats-${si}`).innerHTML=`
+    <span class="stat-pill total">${st.total} questions</span>
+    <span class="stat-pill answered">${st.answered} répondues</span>
+    <span class="stat-pill correct">✓ ${st.correct} correctes</span>
+    <span class="stat-pill wrong">✗ ${st.wrong} incorrectes</span>`;
+  const fs=document.getElementById(`fscore-${si}`);
+  if(st.answered===st.total){fs.style.display='block';fs.textContent=`Score : ${st.correct} / ${st.total} (${Math.round(st.correct/st.total*100)}%)`;}
+  else fs.style.display='none';
+}
+function refreshGlobal(){
+  const g=globalStats();
+  document.getElementById('g-answered').textContent=g.answered;
+  document.getElementById('g-correct').textContent=g.correct;
+  document.getElementById('g-wrong').textContent=g.wrong;
+  document.getElementById('global-progress-fill').style.width=(g.answered/TOTAL*100)+'%';
+}
+function resetSerie(si){
+  SERIES[si].parts.forEach((p,pi)=>p.items.forEach(item=>{delete state[key(si,pi,item.n)];refreshCard(si,pi,item.n);}));
+  refreshSerieStats(si);refreshGlobal();
+}
+buildNav();buildContent();
+SERIES.forEach((_,si)=>refreshSerieStats(si));
+refreshGlobal();
+</script>
+</body>
+</html>
